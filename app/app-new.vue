@@ -469,9 +469,9 @@
                       required
                     >
                       <option value="">Select room type</option>
-                      <option value="deluxe">Deluxe - PKR 8,000/night</option>
+                      <option value="deluxe">Deluxe Mountain View - PKR 8,000/night</option>
                       <option value="family">Family Suite - PKR 12,000/night</option>
-                      <option value="presidential">Presidential - PKR 18,000/night</option>
+                      <option value="presidential">Presidential Suite - PKR 18,000/night</option>
                     </select>
                   </div>
 
