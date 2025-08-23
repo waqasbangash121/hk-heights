@@ -97,7 +97,6 @@
 
     <!-- Main Content -->
     <main id="main-content" role="main">
-      
       <!-- Hero Section -->
       <section id="home" class="hero-section" role="banner">
         <div class="hero-background">
