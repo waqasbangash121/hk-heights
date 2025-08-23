@@ -750,6 +750,35 @@ h1, h2, h3, h4, h5, h6 {
   border-color: var(--primary-color);
 }
 
+.form-help {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-light);
+  font-style: italic;
+}
+
+/* Amenity count styling */
+.amenity-count {
+  font-size: 0.875rem;
+  color: var(--text-light);
+  font-weight: 500;
+  margin-left: 0.5rem;
+}
+
+/* Form validation states */
+.form-input:invalid,
+.form-select:invalid,
+.form-textarea:invalid {
+  border-color: #e74c3c;
+}
+
+.form-input:valid,
+.form-select:valid,
+.form-textarea:valid {
+  border-color: #27ae60;
+}
+
 .form-textarea {
   resize: vertical;
   min-height: 100px;
@@ -1104,15 +1133,158 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Animation Classes */
+/* Animation classes for AOS */
 [data-aos] {
+  transition-property: transform, opacity;
+  transition-duration: 0.6s;
+  transition-timing-function: ease-in-out;
   opacity: 0;
-  transform: translateY(30px);
-  transition: opacity 0.8s ease, transform 0.8s ease;
+  transform: translateY(50px);
 }
 
 [data-aos].aos-animate {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* Loading, Error, and Empty States */
+.loading-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2rem;
+  width: 100%;
+}
+
+.apartment-card-skeleton {
+  background: var(--white);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-light);
+  overflow: hidden;
+  animation: pulse 1.5s infinite;
+}
+
+.skeleton-image {
+  height: 250px;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-content {
+  padding: 1.5rem;
+}
+
+.skeleton-title {
+  height: 1.5rem;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.skeleton-description {
+  height: 1rem;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  width: 80%;
+}
+
+.skeleton-features {
+  height: 4rem;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.skeleton-footer {
+  height: 2.5rem;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.error-state, .empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+}
+
+.error-card, .empty-card {
+  text-align: center;
+  padding: 2rem;
+  background: var(--white);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-light);
+  max-width: 400px;
+}
+
+.error-card i, .empty-card i {
+  font-size: 3rem;
+  color: var(--secondary-color);
+  margin-bottom: 1rem;
+}
+
+.error-card h3, .empty-card h3 {
+  margin-bottom: 0.5rem;
+  color: var(--text-dark);
+}
+
+.error-card p, .empty-card p {
+  color: var(--text-light);
+  margin-bottom: 1.5rem;
+}
+
+.error-card .btn {
+  margin-top: 1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .loading-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .skeleton-image {
+    height: 200px;
+  }
+  
+  .error-card, .empty-card {
+    padding: 1.5rem;
+    margin: 0 1rem;
+  }
+}
+
+/* Apartments container styling */
+.apartments-container {
+  display: contents;
 }
 
 /* Responsive Design */

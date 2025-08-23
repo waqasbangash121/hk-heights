@@ -3,6 +3,24 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
+  // Production configuration
+  nitro: {
+    preset: 'netlify',
+    experimental: {
+      wasm: true
+    }
+  },
+
+  // Runtime config for environment variables
+  runtimeConfig: {
+    // Private keys (only available on server-side)
+    databaseUrl: process.env.DATABASE_URL,
+    // Public keys (exposed to client-side)
+    public: {
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://hkheights.netlify.app'
+    }
+  },
+
   // SEO and Meta Configuration
   app: {
     head: {
@@ -51,7 +69,7 @@ export default defineNuxtConfig({
         // Structured Data for SEO
         {
           type: 'application/ld+json',
-          children: JSON.stringify({
+          innerHTML: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "LodgingBusiness",
             "name": "HK Heights",
@@ -84,6 +102,11 @@ export default defineNuxtConfig({
   // Performance optimizations
   experimental: {
     payloadExtraction: false
+  },
+
+  // Production build optimizations
+  build: {
+    transpile: ['@prisma/client']
   },
 
   // SEO module (you can install @nuxtjs/seo later)

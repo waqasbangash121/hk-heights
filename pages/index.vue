@@ -172,90 +172,94 @@
             </p>
           </div>
 
-          <div class="apartments-grid">
-            <div class="apartment-card" data-aos="fade-up" data-aos-delay="200">
-              <div class="apartment-image">
-                <img 
-                  src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=400&fit=crop&q=80" 
-                  alt="Deluxe Mountain View Room with modern amenities"
-                  loading="lazy"
-                >
-                <div class="apartment-badge">Most Popular</div>
-              </div>
-              <div class="apartment-content">
-                <h3 class="apartment-title">Deluxe Mountain View</h3>
-                <p class="apartment-description">
-                  Spacious rooms with panoramic mountain views, modern amenities, and premium comfort.
-                </p>
-                <ul class="apartment-features">
-                  <li><i class="fas fa-mountain"></i> Mountain View</li>
-                  <li><i class="fas fa-wifi"></i> High-Speed WiFi</li>
-                  <li><i class="fas fa-snowflake"></i> Climate Control</li>
-                  <li><i class="fas fa-coffee"></i> Mini Bar</li>
-                </ul>
-                <div class="apartment-footer">
-                  <span class="apartment-price">From PKR 8,000/night</span>
-                  <button class="btn btn-outline" @click="openBookingModal('deluxe')">
-                    Book Now
-                  </button>
+          <div 
+            class="apartments-grid force-grid-layout"
+          >
+            <!-- Loading State -->
+            <div v-if="apartmentsLoading" class="loading-grid">
+              <div class="apartment-card-skeleton" v-for="n in 3" :key="n">
+                <div class="skeleton-image"></div>
+                <div class="skeleton-content">
+                  <div class="skeleton-title"></div>
+                  <div class="skeleton-description"></div>
+                  <div class="skeleton-features"></div>
+                  <div class="skeleton-footer"></div>
                 </div>
               </div>
             </div>
 
-            <div class="apartment-card" data-aos="fade-up" data-aos-delay="400">
-              <div class="apartment-image">
-                <img 
-                  src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=400&fit=crop&q=80" 
-                  alt="Family Suite with spacious living area"
-                  loading="lazy"
-                >
-              </div>
-              <div class="apartment-content">
-                <h3 class="apartment-title">Family Suite</h3>
-                <p class="apartment-description">
-                  Perfect for families with separate living areas, multiple bedrooms, and child-friendly amenities.
-                </p>
-                <ul class="apartment-features">
-                  <li><i class="fas fa-users"></i> Up to 6 Guests</li>
-                  <li><i class="fas fa-couch"></i> Living Area</li>
-                  <li><i class="fas fa-gamepad"></i> Entertainment</li>
-                  <li><i class="fas fa-bath"></i> 2 Bathrooms</li>
-                </ul>
-                <div class="apartment-footer">
-                  <span class="apartment-price">From PKR 12,000/night</span>
-                  <button class="btn btn-outline" @click="openBookingModal('family')">
-                    Book Now
-                  </button>
-                </div>
+            <!-- Error State -->
+            <div v-else-if="apartmentsError" class="error-state">
+              <div class="error-card">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Unable to Load Apartments</h3>
+                <p>{{ apartmentsError }}</p>
+                <button class="btn btn-primary" @click="fetchApartments">
+                  <i class="fas fa-redo"></i>
+                  Try Again
+                </button>
               </div>
             </div>
 
-            <div class="apartment-card" data-aos="fade-up" data-aos-delay="600">
-              <div class="apartment-image">
-                <img 
-                  src="https://images.unsplash.com/photo-1582719508461-905c673771fd?w=600&h=400&fit=crop&q=80" 
-                  alt="Presidential Suite with luxury amenities"
-                  loading="lazy"
-                >
-                <div class="apartment-badge">Premium</div>
-              </div>
-              <div class="apartment-content">
-                <h3 class="apartment-title">Presidential Suite</h3>
-                <p class="apartment-description">
-                  Ultimate luxury with private terrace, spa services, and personalized concierge.
-                </p>
-                <ul class="apartment-features">
-                  <li><i class="fas fa-crown"></i> VIP Treatment</li>
-                  <li><i class="fas fa-spa"></i> Private Spa</li>
-                  <li><i class="fas fa-wine-glass"></i> Mini Bar</li>
-                  <li><i class="fas fa-concierge-bell"></i> Concierge</li>
-                </ul>
-                <div class="apartment-footer">
-                  <span class="apartment-price">From PKR 18,000/night</span>
-                  <button class="btn btn-outline" @click="openBookingModal('presidential')">
-                    Book Now
-                  </button>
+            <!-- Success State with Apartments - DIRECT GRID CHILDREN -->
+            <template v-else-if="apartments && apartments.length > 0">
+              <div 
+                v-for="(apartment, index) in apartments" 
+                :key="`apartment-${apartment.id}`"
+                class="apartment-card"
+                @click="openApartmentModal(apartment)"
+                role="button"
+                tabindex="0"
+                @keydown.enter="openApartmentModal(apartment)"
+                @keydown.space="openApartmentModal(apartment)"
+              >
+                <div class="apartment-image">
+                  <img 
+                    :src="getApartmentMainImage(apartment)" 
+                    :alt="`${apartment.name} - ${apartment.description}`"
+                    loading="lazy"
+                    @error="handleImageError"
+                  >
+                  <div v-if="index === 0" class="apartment-badge">Most Popular</div>
+                  <div v-else-if="Number(apartment.pricePerNight) > 15000" class="apartment-badge">Premium</div>
                 </div>
+                <div class="apartment-content">
+                  <h3 class="apartment-title">{{ apartment.name }}</h3>
+                  <p class="apartment-description">
+                    {{ apartment.description || 'Luxurious apartment with modern amenities and stunning views.' }}
+                  </p>
+                  <ul class="apartment-features">
+                    <li><i class="fas fa-bed"></i> {{ apartment.bedrooms }} {{ apartment.bedrooms === 1 ? 'Bedroom' : 'Bedrooms' }}</li>
+                    <li><i class="fas fa-bath"></i> {{ apartment.bathrooms }} {{ apartment.bathrooms === 1 ? 'Bathroom' : 'Bathrooms' }}</li>
+                    <li><i class="fas fa-users"></i> Up to {{ apartment.maxGuests }} Guests</li>
+                    <li v-if="apartment.amenities && apartment.amenities.length > 0">
+                      <i :class="getFirstAmenityIcon(apartment)"></i> 
+                      {{ getFirstAmenityName(apartment) }}
+                      <span v-if="apartment.amenities.length > 1" class="amenity-count">
+                        +{{ apartment.amenities.length - 1 }} more
+                      </span>
+                    </li>
+                  </ul>
+                  <div class="apartment-footer">
+                    <span class="apartment-price">From PKR {{ formatPrice(apartment.pricePerNight) }}/night</span>
+                    <button 
+                      class="btn btn-outline" 
+                      @click.stop="openBookingModal(apartment)"
+                      @keydown.stop
+                    >
+                      Book Now
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <!-- Empty State -->
+            <div v-else class="empty-state">
+              <div class="empty-card">
+                <i class="fas fa-home"></i>
+                <h3>No Apartments Available</h3>
+                <p>Check back later for available apartments.</p>
               </div>
             </div>
           </div>
@@ -460,17 +464,21 @@
 
                   <!-- Booking Details -->
                   <div class="form-group">
-                    <label for="room-type" class="form-label">Room Type *</label>
+                    <label for="room-type" class="form-label">Apartment Type *</label>
                     <select 
                       id="room-type"
-                      v-model="bookingForm.roomType"
+                      v-model="bookingForm.apartmentId"
                       class="form-select"
                       required
                     >
-                      <option value="">Select room type</option>
-                      <option value="deluxe">Deluxe Mountain View - PKR 8,000/night</option>
-                      <option value="family">Family Suite - PKR 12,000/night</option>
-                      <option value="presidential">Presidential Suite - PKR 18,000/night</option>
+                      <option value="">Select apartment type</option>
+                      <option 
+                        v-for="apartment in apartments" 
+                        :key="apartment.id"
+                        :value="apartment.id"
+                      >
+                        {{ apartment.name }} - PKR {{ formatPrice(apartment.pricePerNight) }}/night
+                      </option>
                     </select>
                   </div>
 
@@ -505,13 +513,17 @@
                       required
                     >
                       <option value="">Select guests</option>
-                      <option value="1">1 Guest</option>
-                      <option value="2">2 Guests</option>
-                      <option value="3">3 Guests</option>
-                      <option value="4">4 Guests</option>
-                      <option value="5">5 Guests</option>
-                      <option value="6">6 Guests</option>
+                      <option 
+                        v-for="n in getMaxGuestsOptions()" 
+                        :key="n" 
+                        :value="n"
+                      >
+                        {{ n }} {{ n === 1 ? 'Guest' : 'Guests' }}
+                      </option>
                     </select>
+                    <small v-if="selectedApartment" class="form-help">
+                      Maximum {{ selectedApartment.maxGuests }} guests for {{ selectedApartment.name }}
+                    </small>
                   </div>
 
                   <!-- Special Requests -->
@@ -528,11 +540,11 @@
                 </div>
 
                 <!-- Booking Summary -->
-                <div class="booking-summary" v-if="bookingForm.roomType && bookingForm.checkinDate && bookingForm.checkoutDate">
+                <div class="booking-summary" v-if="selectedApartment && bookingForm.checkinDate && bookingForm.checkoutDate">
                   <h3 class="summary-title">Booking Summary</h3>
                   <div class="summary-item">
-                    <span>Room Type:</span>
-                    <span>{{ getRoomTypeName(bookingForm.roomType) }}</span>
+                    <span>Apartment:</span>
+                    <span>{{ selectedApartment.name }}</span>
                   </div>
                   <div class="summary-item">
                     <span>Duration:</span>
@@ -542,9 +554,13 @@
                     <span>Guests:</span>
                     <span>{{ bookingForm.guests }} {{ bookingForm.guests == 1 ? 'guest' : 'guests' }}</span>
                   </div>
+                  <div class="summary-item">
+                    <span>Price per night:</span>
+                    <span>PKR {{ formatPrice(selectedApartment.pricePerNight) }}</span>
+                  </div>
                   <div class="summary-item summary-total">
                     <span>Total Cost:</span>
-                    <span>PKR {{ calculateTotalCost().toLocaleString() }}</span>
+                    <span>PKR {{ formatPrice(calculateTotalCost()) }}</span>
                   </div>
                 </div>
 
@@ -697,6 +713,266 @@
       </div>
     </div>
 
+    <!-- Apartment Details Modal -->
+    <div 
+      class="apartment-modal-overlay" 
+      :class="{ active: showApartmentModal }"
+      @click="closeApartmentModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="apartment-modal-title"
+    >
+      <div class="apartment-modal-content" @click.stop>
+        <!-- Modal Header -->
+        <div class="apartment-modal-header">
+          <button 
+            class="apartment-modal-close" 
+            @click="closeApartmentModal"
+            aria-label="Close apartment details"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+          
+          <div class="apartment-modal-nav" v-if="apartments.length > 1">
+            <button 
+              class="modal-nav-btn modal-prev" 
+              @click="prevApartment"
+              :disabled="currentApartmentIndex === 0"
+              aria-label="Previous apartment"
+            >
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <span class="modal-counter">
+              {{ currentApartmentIndex + 1 }} / {{ apartments.length }}
+            </span>
+            <button 
+              class="modal-nav-btn modal-next" 
+              @click="nextApartment"
+              :disabled="currentApartmentIndex === apartments.length - 1"
+              aria-label="Next apartment"
+            >
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="apartment-modal-body" v-if="selectedModalApartment">
+          <!-- Image Gallery Section -->
+          <div class="apartment-modal-gallery">
+            <div class="main-image-container">
+              <!-- Loading Spinner -->
+              <div class="image-loading" v-if="modalImageLoading">
+                <div class="loading-spinner"></div>
+              </div>
+              
+              <img 
+                :src="currentModalImage" 
+                :alt="`${selectedModalApartment.name} - Image ${currentModalImageIndex + 1}`"
+                class="main-modal-image"
+                :class="{ loading: modalImageLoading }"
+                @error="handleModalImageError"
+                @load="handleModalImageLoad"
+                @loadstart="modalImageLoading = true"
+              >
+              
+              <!-- Image Navigation - Only show if there are multiple images -->
+              <div class="image-nav" v-if="getApartmentImages(selectedModalApartment).length > 1">
+                <button 
+                  class="image-nav-btn image-prev" 
+                  @click="prevModalImage"
+                  :disabled="currentModalImageIndex === 0"
+                >
+                  <i class="fas fa-chevron-left"></i>
+                </button>
+                <button 
+                  class="image-nav-btn image-next" 
+                  @click="nextModalImage"
+                  :disabled="currentModalImageIndex === getApartmentImages(selectedModalApartment).length - 1"
+                >
+                  <i class="fas fa-chevron-right"></i>
+                </button>
+              </div>
+
+              <!-- Image Indicators - Only show if there are multiple images -->
+              <div class="image-indicators" v-if="getApartmentImages(selectedModalApartment).length > 1">
+                <button
+                  v-for="(image, index) in getApartmentImages(selectedModalApartment)"
+                  :key="index"
+                  class="image-indicator"
+                  :class="{ active: index === currentModalImageIndex }"
+                  @click="modalImageLoading = true; currentModalImageIndex = index"
+                  :aria-label="`View image ${index + 1}`"
+                ></button>
+              </div>
+
+              <!-- No Images Placeholder -->
+              <div class="no-images-placeholder" v-if="getApartmentImages(selectedModalApartment).length === 0">
+                <div class="placeholder-content">
+                  <i class="fas fa-image"></i>
+                  <p>Gallery images coming soon</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Thumbnail Gallery - Only show if there are multiple images -->
+            <div class="thumbnail-gallery" v-if="getApartmentImages(selectedModalApartment).length > 1">
+              <button
+                v-for="(image, index) in getApartmentImages(selectedModalApartment)"
+                :key="index"
+                class="thumbnail-btn"
+                :class="{ active: index === currentModalImageIndex }"
+                @click="modalImageLoading = true; currentModalImageIndex = index"
+              >
+                <img 
+                  :src="image" 
+                  :alt="`Thumbnail ${index + 1}`"
+                  @error="handleThumbnailError"
+                  loading="lazy"
+                >
+              </button>
+            </div>
+          </div>
+
+          <!-- Apartment Details Section -->
+          <div class="apartment-modal-details">
+            <div class="apartment-modal-info">
+              <!-- Title and Badge -->
+              <div class="modal-title-section">
+                <div class="modal-badges">
+                  <span v-if="currentApartmentIndex === 0" class="modal-badge popular">Most Popular</span>
+                  <span v-else-if="Number(selectedModalApartment.pricePerNight) > 15000" class="modal-badge premium">Premium</span>
+                  <span class="modal-badge availability">Available</span>
+                </div>
+                <h2 id="apartment-modal-title" class="modal-title">{{ selectedModalApartment.name }}</h2>
+                <p class="modal-location" v-if="selectedModalApartment.property">
+                  <i class="fas fa-map-marker-alt"></i>
+                  {{ selectedModalApartment.property.name || 'HK Heights Premium Location' }}
+                </p>
+              </div>
+
+              <!-- Description -->
+              <div class="modal-description">
+                <h3>About This Apartment</h3>
+                <p>{{ selectedModalApartment.description || 'Experience luxury mountain living in this beautifully appointed apartment featuring modern amenities, stunning views, and premium comfort for an unforgettable stay.' }}</p>
+              </div>
+
+              <!-- Key Features -->
+              <div class="modal-features">
+                <h3>Key Features</h3>
+                <div class="features-grid">
+                  <div class="feature-item">
+                    <i class="fas fa-bed"></i>
+                    <div>
+                      <span class="feature-label">Bedrooms</span>
+                      <span class="feature-value">{{ selectedModalApartment.bedrooms }}</span>
+                    </div>
+                  </div>
+                  <div class="feature-item">
+                    <i class="fas fa-bath"></i>
+                    <div>
+                      <span class="feature-label">Bathrooms</span>
+                      <span class="feature-value">{{ selectedModalApartment.bathrooms }}</span>
+                    </div>
+                  </div>
+                  <div class="feature-item">
+                    <i class="fas fa-users"></i>
+                    <div>
+                      <span class="feature-label">Max Guests</span>
+                      <span class="feature-value">{{ selectedModalApartment.maxGuests }}</span>
+                    </div>
+                  </div>
+                  <div class="feature-item">
+                    <i class="fas fa-home"></i>
+                    <div>
+                      <span class="feature-label">Area</span>
+                      <span class="feature-value">{{ selectedModalApartment.area || '850' }} sq ft</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Amenities -->
+              <div class="modal-amenities" v-if="selectedModalApartment.amenities && selectedModalApartment.amenities.length > 0">
+                <h3>Amenities & Services</h3>
+                <div class="amenities-grid">
+                  <div 
+                    v-for="amenityItem in selectedModalApartment.amenities" 
+                    :key="amenityItem.id"
+                    class="amenity-item"
+                  >
+                    <i :class="getAmenityIcon(amenityItem.amenity)"></i>
+                    <span>{{ amenityItem.amenity.name }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pricing Section -->
+              <div class="modal-pricing">
+                <div class="price-info">
+                  <div class="main-price">
+                    <span class="price-amount">PKR {{ formatPrice(selectedModalApartment.pricePerNight) }}</span>
+                    <span class="price-period">per night</span>
+                  </div>
+                  <div class="price-details">
+                    <small>Taxes and fees included</small>
+                  </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="modal-actions">
+                  <button 
+                    class="btn btn-primary btn-large modal-book-btn"
+                    @click="bookFromModal"
+                  >
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Book This Apartment</span>
+                  </button>
+                  <button 
+                    class="btn btn-outline btn-large modal-contact-btn"
+                    @click="contactAboutApartment"
+                  >
+                    <i class="fas fa-phone"></i>
+                    <span>Contact Us</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Additional Info -->
+              <div class="modal-additional-info">
+                <div class="info-grid">
+                  <div class="info-item">
+                    <i class="fas fa-clock"></i>
+                    <div>
+                      <strong>Check-in:</strong> 3:00 PM
+                    </div>
+                  </div>
+                  <div class="info-item">
+                    <i class="fas fa-clock"></i>
+                    <div>
+                      <strong>Check-out:</strong> 11:00 AM
+                    </div>
+                  </div>
+                  <div class="info-item">
+                    <i class="fas fa-ban-smoking"></i>
+                    <div>
+                      <strong>Non-smoking</strong> apartment
+                    </div>
+                  </div>
+                  <div class="info-item">
+                    <i class="fas fa-wifi"></i>
+                    <div>
+                      <strong>Free WiFi</strong> included
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Success Modal -->
     <div 
       class="modal-overlay" 
@@ -735,12 +1011,24 @@ const showSuccessModal = ref(false)
 const isSubmitting = ref(false)
 const newsletterEmail = ref('')
 
+// Apartment Modal State
+const showApartmentModal = ref(false)
+const selectedModalApartment = ref(null)
+const currentApartmentIndex = ref(0)
+const currentModalImageIndex = ref(0)
+const modalImageLoading = ref(false)
+
+// Apartments data
+const apartments = ref([])
+const apartmentsLoading = ref(true)
+const apartmentsError = ref(null)
+
 // Booking form
 const bookingForm = ref({
   name: '',
   email: '',
   phone: '',
-  roomType: '',
+  apartmentId: '',
   checkinDate: '',
   checkoutDate: '',
   guests: '',
@@ -780,11 +1068,150 @@ const currentLightboxImage = computed(() => {
   return galleryImages.value[currentImageIndex.value]?.src || ''
 })
 
-// Room prices
-const roomPrices = {
-  deluxe: 8000,
-  family: 12000,
-  presidential: 18000
+const selectedApartment = computed(() => {
+  return apartments.value.find(apt => apt.id === parseInt(bookingForm.value.apartmentId))
+})
+
+const currentModalImage = computed(() => {
+  if (!selectedModalApartment.value) return ''
+  const images = getApartmentImages(selectedModalApartment.value)
+  
+  // If no images in database, use the main image fallback
+  if (images.length === 0) {
+    return getApartmentMainImage(selectedModalApartment.value)
+  }
+  
+  return images[currentModalImageIndex.value] || images[0]
+})
+
+const apartmentGridStyles = computed(() => {
+  return {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gap: '1.5rem',
+    width: '100%',
+    maxWidth: '1200px',
+    marginLeft: 'auto',
+    marginRight: 'auto',
+    marginTop: '3rem'
+  }
+})
+
+// Apartment helper methods
+const fetchApartments = async () => {
+  try {
+    apartmentsLoading.value = true
+    apartmentsError.value = null
+    
+    const response = await $fetch('/api/apartments')
+    
+    if (response?.success) {
+      apartments.value = response.apartments || []
+    } else {
+      throw new Error(response?.error || 'Failed to fetch apartments')
+    }
+  } catch (error) {
+    console.error('Error fetching apartments:', error)
+    apartmentsError.value = error.message || 'Failed to load apartments'
+    apartments.value = []
+  } finally {
+    apartmentsLoading.value = false
+  }
+}
+
+const getApartmentMainImage = (apartment) => {
+  // Get the main image or first image from the apartment
+  const mainImage = apartment.images?.find(img => img.isMain)
+  const firstImage = apartment.images?.[0]
+  const defaultImage = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=400&fit=crop&q=80'
+  
+  return mainImage?.imageUrl || firstImage?.imageUrl || defaultImage
+}
+
+const getFirstAmenityIcon = (apartment) => {
+  const firstAmenity = apartment.amenities?.[0]?.amenity
+  if (firstAmenity?.icon) {
+    // Map database icon names to Font Awesome classes
+    const iconMap = {
+      'wifi': 'fas fa-wifi',
+      'mountain': 'fas fa-mountain',
+      'balcony': 'fas fa-city',
+      'kitchen': 'fas fa-utensils',
+      'tv': 'fas fa-tv',
+      'ac': 'fas fa-snowflake',
+      'heating': 'fas fa-fire',
+      'parking': 'fas fa-car',
+      'spa': 'fas fa-spa',
+      'restaurant': 'fas fa-utensils'
+    }
+    return iconMap[firstAmenity.icon] || 'fas fa-star'
+  }
+  // Default icons based on common amenity names
+  return 'fas fa-star'
+}
+
+const getFirstAmenityName = (apartment) => {
+  const firstAmenity = apartment.amenities?.[0]?.amenity
+  return firstAmenity?.name || 'Premium Amenities'
+}
+
+const getApartmentImages = (apartment) => {
+  if (!apartment || !apartment.images || apartment.images.length === 0) {
+    // Return empty array if no images in database - we'll handle this in the template
+    return []
+  }
+  
+  // Filter out any images with empty or null URLs and sort by sortOrder
+  return apartment.images
+    .filter(img => img.imageUrl && img.imageUrl.trim() !== '')
+    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+    .map(img => img.imageUrl)
+}
+
+const getAmenityIcon = (amenity) => {
+  if (!amenity || !amenity.icon) return 'fas fa-star'
+  
+  const iconMap = {
+    'wifi': 'fas fa-wifi',
+    'mountain': 'fas fa-mountain',
+    'balcony': 'fas fa-city',
+    'kitchen': 'fas fa-utensils',
+    'tv': 'fas fa-tv',
+    'ac': 'fas fa-snowflake',
+    'heating': 'fas fa-fire',
+    'parking': 'fas fa-car',
+    'spa': 'fas fa-spa',
+    'restaurant': 'fas fa-utensils',
+    'pool': 'fas fa-swimming-pool',
+    'gym': 'fas fa-dumbbell',
+    'laundry': 'fas fa-tshirt',
+    'room-service': 'fas fa-concierge-bell',
+    'safe': 'fas fa-lock',
+    'minibar': 'fas fa-cocktail'
+  }
+  
+  return iconMap[amenity.icon] || 'fas fa-star'
+}
+
+const formatPrice = (price) => {
+  try {
+    return Number(price).toLocaleString()
+  } catch (error) {
+    console.error('Error formatting price:', price, error)
+    return price?.toString() || '0'
+  }
+}
+
+const handleImageError = (event) => {
+  // Fallback to a default image if apartment image fails to load
+  event.target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=400&fit=crop&q=80'
+}
+
+const getMaxGuestsOptions = () => {
+  if (selectedApartment.value) {
+    return Array.from({ length: selectedApartment.value.maxGuests }, (_, i) => i + 1)
+  }
+  return [1, 2, 3, 4, 5, 6] // Default fallback
 }
 
 // Methods
@@ -825,18 +1252,94 @@ const prevImage = () => {
     : currentImageIndex.value - 1
 }
 
-const openBookingModal = (roomType) => {
-  bookingForm.value.roomType = roomType
+const openBookingModal = (apartment) => {
+  if (typeof apartment === 'object') {
+    // Called with apartment object from apartment card
+    bookingForm.value.apartmentId = apartment.id.toString()
+  } else {
+    // Called with apartment object directly
+    bookingForm.value.apartmentId = apartment.toString()
+  }
   scrollToSection('booking')
 }
 
-const getRoomTypeName = (roomType) => {
-  const names = {
-    deluxe: 'Deluxe Mountain View',
-    family: 'Family Suite',
-    presidential: 'Presidential Suite'
+// Apartment Modal Methods
+const openApartmentModal = (apartment) => {
+  selectedModalApartment.value = apartment
+  currentApartmentIndex.value = apartments.value.findIndex(apt => apt.id === apartment.id)
+  currentModalImageIndex.value = 0
+  showApartmentModal.value = true
+  document.body.style.overflow = 'hidden'
+}
+
+const closeApartmentModal = () => {
+  showApartmentModal.value = false
+  selectedModalApartment.value = null
+  currentModalImageIndex.value = 0
+  document.body.style.overflow = 'auto'
+}
+
+const nextApartment = () => {
+  if (currentApartmentIndex.value < apartments.value.length - 1) {
+    currentApartmentIndex.value++
+    selectedModalApartment.value = apartments.value[currentApartmentIndex.value]
+    currentModalImageIndex.value = 0
   }
-  return names[roomType] || roomType
+}
+
+const prevApartment = () => {
+  if (currentApartmentIndex.value > 0) {
+    currentApartmentIndex.value--
+    selectedModalApartment.value = apartments.value[currentApartmentIndex.value]
+    currentModalImageIndex.value = 0
+  }
+}
+
+const nextModalImage = () => {
+  const images = getApartmentImages(selectedModalApartment.value)
+  if (currentModalImageIndex.value < images.length - 1) {
+    modalImageLoading.value = true
+    currentModalImageIndex.value++
+  }
+}
+
+const prevModalImage = () => {
+  if (currentModalImageIndex.value > 0) {
+    modalImageLoading.value = true
+    currentModalImageIndex.value--
+  }
+}
+
+const bookFromModal = () => {
+  if (selectedModalApartment.value) {
+    bookingForm.value.apartmentId = selectedModalApartment.value.id.toString()
+    closeApartmentModal()
+    scrollToSection('booking')
+  }
+}
+
+const contactAboutApartment = () => {
+  // Could open a contact modal or redirect to contact form
+  // For now, we'll scroll to booking section
+  closeApartmentModal()
+  scrollToSection('booking')
+}
+
+// Image Error Handling for Modal
+const handleModalImageError = (event) => {
+  // Set fallback image for main modal image
+  event.target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop&q=80'
+  modalImageLoading.value = false
+}
+
+const handleModalImageLoad = (event) => {
+  // Hide loading spinner when image loads
+  modalImageLoading.value = false
+}
+
+const handleThumbnailError = (event) => {
+  // Hide broken thumbnail
+  event.target.parentElement.style.display = 'none'
 }
 
 const calculateNights = () => {
@@ -852,7 +1355,10 @@ const calculateNights = () => {
 
 const calculateTotalCost = () => {
   const nights = calculateNights()
-  const pricePerNight = roomPrices[bookingForm.value.roomType] || 0
+  const apartment = selectedApartment.value
+  if (!apartment) return 0
+  
+  const pricePerNight = Number(apartment.pricePerNight)
   return nights * pricePerNight
 }
 
@@ -867,7 +1373,7 @@ const submitBooking = async () => {
     name: '',
     email: '',
     phone: '',
-    roomType: '',
+    apartmentId: '',
     checkinDate: '',
     checkoutDate: '',
     guests: '',
@@ -893,6 +1399,9 @@ const subscribeNewsletter = async () => {
 
 // Lifecycle
 onMounted(() => {
+  // Fetch apartments data
+  fetchApartments()
+  
   // Scroll handler for navbar
   const handleScroll = () => {
     isScrolled.value = window.scrollY > 100
@@ -906,6 +1415,13 @@ onMounted(() => {
       if (e.key === 'Escape') closeLightbox()
       if (e.key === 'ArrowLeft') prevImage()
       if (e.key === 'ArrowRight') nextImage()
+    }
+    if (showApartmentModal.value) {
+      if (e.key === 'Escape') closeApartmentModal()
+      if (e.key === 'ArrowLeft' && e.shiftKey) prevApartment()
+      if (e.key === 'ArrowRight' && e.shiftKey) nextApartment()
+      if (e.key === 'ArrowLeft' && !e.shiftKey) prevModalImage()
+      if (e.key === 'ArrowRight' && !e.shiftKey) nextModalImage()
     }
     if (e.key === 'Escape' && mobileMenuOpen.value) {
       mobileMenuOpen.value = false
@@ -951,3 +1467,1580 @@ onMounted(() => {
   }
 })
 </script>
+
+<style scoped>
+/* FORCE GRID LAYOUT - Dynamic content with uniform heights */
+.force-grid-layout {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 2rem !important;
+  width: 100% !important;
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+  grid-auto-rows: 1fr !important;
+  align-items: stretch !important;
+}
+
+/* Dynamic cards that stretch to match tallest card */
+.force-grid-layout .apartment-card {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  position: relative !important;
+  grid-column: auto !important;
+  grid-row: auto !important;
+  height: auto !important;
+  min-height: 500px !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Responsive for smaller screens */
+@media (max-width: 1199px) {
+  .force-grid-layout {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+  }
+  
+  .force-grid-layout .apartment-card {
+    min-height: 480px !important;
+  }
+  
+  .apartment-content {
+    padding: 1.75rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .force-grid-layout {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+  
+  .force-grid-layout .apartment-card {
+    min-height: 450px !important;
+  }
+  
+  .apartment-image {
+    height: 200px;
+  }
+  
+  .apartment-content {
+    padding: 1.5rem;
+  }
+  
+  .apartment-features {
+    gap: 0.5rem;
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Enhanced Apartments Section Styling for Public Page */
+
+/* Custom apartments section improvements */
+.apartments-section {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.apartments-section .container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Improved apartments grid for public display */
+.public-apartments-grid {
+  display: grid !important;
+  gap: 1.5rem !important;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+  margin-top: 3rem;
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Override any global styles specifically */
+.apartments-section .public-apartments-grid {
+  display: grid !important;
+  gap: 1.5rem !important;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+}
+
+/* Apartments container styling */
+.apartments-container {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+  gap: 1.5rem !important;
+  width: 100% !important;
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+}
+
+/* Enhanced apartment card for better visual appeal */
+.apartment-card {
+  background: var(--white);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  transition: all 0.4s ease;
+  position: relative;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  height: auto;
+  min-height: 500px;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+
+.apartment-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.12);
+}
+
+/* Enhanced apartment image container */
+.apartment-image {
+  position: relative;
+  height: 220px;
+  overflow: hidden;
+  background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+  flex-shrink: 0;
+}
+
+.apartment-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.apartment-card:hover .apartment-image img {
+  transform: scale(1.05);
+}
+
+/* Enhanced apartment badge */
+.apartment-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: linear-gradient(135deg, var(--accent-color), #e89441);
+  color: var(--white);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(244, 162, 97, 0.3);
+  z-index: 2;
+}
+
+/* Enhanced apartment content */
+.apartment-content {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  height: auto;
+  box-sizing: border-box;
+}
+
+.apartment-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--text-dark);
+  line-height: 1.3;
+}
+
+.apartment-description {
+  color: var(--text-light);
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+/* Enhanced apartment features */
+.apartment-features {
+  list-style: none;
+  margin-bottom: 2rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  flex-grow: 1;
+  align-content: start;
+}
+
+.apartment-features li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-light);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.apartment-features i {
+  color: var(--primary-color);
+  width: 18px;
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+/* Enhanced apartment footer */
+.apartment-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+.apartment-price {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.apartment-price::before {
+  content: "Starting from";
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Enhanced Book Now button */
+.apartment-footer .btn-outline {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: var(--white);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 25px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(44, 85, 48, 0.2);
+}
+
+.apartment-footer .btn-outline:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(44, 85, 48, 0.3);
+  background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+}
+
+/* Amenity count styling */
+.amenity-count {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  font-weight: 500;
+  margin-left: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  background: rgba(44, 85, 48, 0.1);
+  border-radius: 12px;
+}
+
+/* Loading state improvements */
+.loading-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+  gap: 1.5rem !important;
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.apartment-card-skeleton {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.skeleton-image {
+  height: 220px;
+}
+
+/* Error and Empty states */
+.error-state, .empty-state {
+  grid-column: 1 / -1;
+  min-height: 400px;
+}
+
+.error-card, .empty-card {
+  padding: 3rem 2rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+.error-card i, .empty-card i {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+}
+
+.error-card h3, .empty-card h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Mobile Responsive Design */
+@media (max-width: 480px) {
+  .public-apartments-grid,
+  .apartments-section .public-apartments-grid {
+    gap: 1rem !important;
+    margin-top: 2rem;
+    grid-template-columns: 1fr !important;
+  }
+  
+  .apartment-card {
+    border-radius: 12px;
+    margin: 0;
+    max-width: none;
+    min-height: 480px;
+  }
+  
+  .apartment-image {
+    height: 200px;
+  }
+  
+  .apartment-content {
+    padding: 1.25rem;
+  }
+  
+  .apartment-title {
+    font-size: 1.25rem;
+  }
+  
+  .apartment-features {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  .apartment-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .apartment-footer .btn-outline {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+  
+  .apartment-price {
+    text-align: center;
+    font-size: 1.1rem;
+  }
+  
+  .apartment-badge {
+    top: 0.75rem;
+    right: 0.75rem;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.7rem;
+  }
+  
+  .skeleton-image {
+    height: 200px;
+  }
+  
+  .error-card, .empty-card {
+    padding: 2rem 1.5rem;
+    margin: 0 0.5rem;
+  }
+}
+
+/* Tablet Design */
+@media (min-width: 481px) and (max-width: 768px) {
+  .public-apartments-grid,
+  .apartments-section .public-apartments-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+    gap: 1.25rem !important;
+  }
+  
+  .apartment-card {
+    max-width: 350px;
+    min-height: 500px;
+  }
+  
+  .apartment-image {
+    height: 210px;
+  }
+  
+  .apartment-features {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .loading-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+  }
+  
+  .skeleton-image {
+    height: 210px;
+  }
+}
+
+/* Desktop Design */
+@media (min-width: 769px) {
+  .public-apartments-grid,
+  .apartments-section .public-apartments-grid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important;
+    gap: 1.75rem !important;
+    margin-top: 3rem;
+  }
+  
+  .apartment-card {
+    max-width: 370px;
+    min-height: 540px;
+  }
+  
+  .apartment-image {
+    height: 230px;
+  }
+  
+  .apartment-content {
+    padding: 1.75rem;
+  }
+  
+  .apartment-title {
+    font-size: 1.75rem;
+  }
+  
+  .apartment-description {
+    font-size: 1rem;
+  }
+  
+  .apartment-features {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  
+  .loading-grid {
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2.5rem;
+  }
+  
+  .skeleton-image {
+    height: 230px;
+  }
+}
+
+/* Large Desktop */
+@media (min-width: 1200px) {
+  .public-apartments-grid,
+  .apartments-section .public-apartments-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 2rem !important;
+    max-width: 1200px;
+  }
+  
+  .apartments-container {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 2rem !important;
+  }
+  
+  .apartment-card {
+    max-width: 380px;
+    min-height: 560px;
+  }
+  
+  .apartment-image {
+    height: 240px;
+  }
+  
+  .apartment-content {
+    padding: 2rem;
+  }
+  .loading-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+}
+
+/* Extra Large Desktop */
+@media (min-width: 1400px) {
+  .apartments-section .container {
+    max-width: 1400px;
+    padding: 0 40px;
+  }
+  
+  .public-apartments-grid,
+  .apartments-section .public-apartments-grid {
+    max-width: 1300px;
+    gap: 2.5rem !important;
+  }
+  
+  .loading-grid {
+    max-width: 1300px;
+    gap: 2.5rem;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .apartment-card {
+    border: 2px solid var(--text-dark);
+  }
+  
+  .apartment-badge {
+    border: 1px solid var(--white);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .apartment-card {
+    transition: none;
+  }
+  
+  .apartment-card:hover {
+    transform: none;
+  }
+  
+  .apartment-image img {
+    transition: none;
+  }
+  
+  .apartment-card:hover .apartment-image img {
+    transform: none;
+  }
+}
+
+/* Dark mode support (if needed in future) */
+@media (prefers-color-scheme: dark) {
+  .apartment-card {
+    background: #1a1a1a;
+    border-color: #333;
+    color: #fff;
+  }
+  
+  .apartment-title {
+    color: #fff;
+  }
+  
+  .apartment-description {
+    color: #ccc;
+  }
+  
+  .apartment-features li {
+    color: #ccc;
+  }
+}
+
+/* Focus states for accessibility */
+.apartment-card:focus-within {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 4px;
+}
+
+.apartment-footer .btn-outline:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* ===== APARTMENT MODAL STYLES ===== */
+
+.apartment-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.apartment-modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.apartment-modal-content {
+  background: var(--white);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 1200px;
+  max-height: 95vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+  transform: scale(0.9);
+  transition: transform 0.3s ease;
+}
+
+.apartment-modal-overlay.active .apartment-modal-content {
+  transform: scale(1);
+}
+
+/* Modal Header */
+.apartment-modal-header {
+  position: relative;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--white);
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.apartment-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(0, 0, 0, 0.5);
+  color: var(--white);
+  border: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 3;
+}
+
+.apartment-modal-close:hover {
+  background: rgba(0, 0, 0, 0.7);
+  transform: scale(1.1);
+}
+
+.apartment-modal-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 0.5rem 1rem;
+  border-radius: 25px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.modal-nav-btn {
+  background: var(--primary-color);
+  color: var(--white);
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.modal-nav-btn:hover:not(:disabled) {
+  background: var(--secondary-color);
+  transform: scale(1.1);
+}
+
+.modal-nav-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.modal-counter {
+  font-weight: 600;
+  color: var(--text-dark);
+  font-size: 0.9rem;
+  min-width: 60px;
+  text-align: center;
+}
+
+/* Modal Body */
+.apartment-modal-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: calc(95vh - 100px);
+  overflow: hidden;
+}
+
+/* Gallery Section */
+.apartment-modal-gallery {
+  background: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.main-image-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  min-height: 400px;
+}
+
+.main-modal-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease, opacity 0.3s ease;
+}
+
+.main-modal-image.loading {
+  opacity: 0.7;
+}
+
+/* Image Loading Spinner */
+.image-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top: 3px solid var(--white);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.image-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 1rem;
+  pointer-events: none;
+}
+
+.image-nav-btn {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-dark);
+  border: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  pointer-events: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.image-nav-btn:hover:not(:disabled) {
+  background: var(--white);
+  transform: scale(1.1);
+}
+
+.image-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.image-indicators {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.image-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.image-indicator.active,
+.image-indicator:hover {
+  background: var(--white);
+  transform: scale(1.2);
+}
+
+.thumbnail-gallery {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem;
+  overflow-x: auto;
+  background: rgba(0, 0, 0, 0.02);
+  max-height: 120px;
+}
+
+.thumbnail-btn {
+  flex-shrink: 0;
+  width: 80px;
+  height: 60px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: none;
+  padding: 0;
+}
+
+.thumbnail-btn.active {
+  border-color: var(--primary-color);
+  transform: scale(1.05);
+}
+
+.thumbnail-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Details Section */
+.apartment-modal-details {
+  overflow-y: auto;
+  padding: 0;
+  background: var(--white);
+}
+
+.apartment-modal-info {
+  padding: 2rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Title Section */
+.modal-title-section {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding-bottom: 1.5rem;
+}
+
+.modal-badges {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.modal-badge {
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.modal-badge.popular {
+  background: linear-gradient(135deg, #ff6b35, #e55a2b);
+  color: var(--white);
+}
+
+.modal-badge.premium {
+  background: linear-gradient(135deg, #ffd700, #ffed4a);
+  color: var(--text-dark);
+}
+
+.modal-badge.availability {
+  background: linear-gradient(135deg, #00d4aa, #00b894);
+  color: var(--white);
+}
+
+.modal-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+.modal-location {
+  color: var(--text-light);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.modal-location i {
+  color: var(--primary-color);
+}
+
+/* Description */
+.modal-description h3 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 1rem;
+}
+
+.modal-description p {
+  color: var(--text-light);
+  line-height: 1.7;
+  font-size: 1rem;
+}
+
+/* Features Grid */
+.modal-features h3 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 1.5rem;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(44, 85, 48, 0.04);
+  border-radius: 12px;
+  border: 1px solid rgba(44, 85, 48, 0.08);
+}
+
+.feature-item i {
+  font-size: 1.5rem;
+  color: var(--primary-color);
+  width: 24px;
+  flex-shrink: 0;
+}
+
+.feature-item div {
+  display: flex;
+  flex-direction: column;
+}
+
+.feature-label {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.feature-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+/* Amenities */
+.modal-amenities h3 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 1.5rem;
+}
+
+.amenities-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.amenity-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: var(--text-dark);
+  font-weight: 500;
+}
+
+.amenity-item i {
+  color: var(--primary-color);
+  width: 18px;
+  flex-shrink: 0;
+}
+
+/* Pricing Section */
+.modal-pricing {
+  background: linear-gradient(135deg, rgba(44, 85, 48, 0.05), rgba(44, 85, 48, 0.02));
+  padding: 2rem;
+  border-radius: 16px;
+  border: 1px solid rgba(44, 85, 48, 0.1);
+  margin-top: auto;
+}
+
+.price-info {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.main-price {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.price-amount {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--primary-color);
+}
+
+.price-period {
+  font-size: 1.1rem;
+  color: var(--text-light);
+  font-weight: 500;
+}
+
+.price-details {
+  color: var(--text-light);
+  font-size: 0.9rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.modal-book-btn,
+.modal-contact-btn {
+  flex: 1;
+  max-width: 180px;
+  padding: 1rem 1.5rem;
+  font-weight: 600;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+}
+
+.modal-book-btn {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  border: none;
+  color: var(--white);
+  box-shadow: 0 6px 20px rgba(44, 85, 48, 0.3);
+}
+
+.modal-book-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(44, 85, 48, 0.4);
+}
+
+.modal-contact-btn {
+  background: var(--white);
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
+}
+
+.modal-contact-btn:hover {
+  background: var(--primary-color);
+  color: var(--white);
+  transform: translateY(-2px);
+}
+
+/* Additional Info */
+.modal-additional-info {
+  background: rgba(0, 0, 0, 0.02);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.info-item i {
+  color: var(--primary-color);
+  width: 16px;
+  flex-shrink: 0;
+}
+
+/* Responsive Design for Modal */
+@media (max-width: 1024px) {
+  .apartment-modal-content {
+    max-width: 95vw;
+    max-height: 90vh;
+  }
+  
+  .apartment-modal-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: 45% 1fr;
+  }
+  
+  .modal-title {
+    font-size: 2rem;
+  }
+  
+  .features-grid,
+  .amenities-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+  }
+  
+  .modal-book-btn,
+  .modal-contact-btn {
+    max-width: none;
+  }
+  
+  .thumbnail-gallery {
+    max-height: 100px;
+  }
+  
+  .thumbnail-btn {
+    width: 70px;
+    height: 50px;
+  }
+}
+
+@media (max-width: 768px) {
+  .apartment-modal-overlay {
+    padding: 5px;
+    align-items: flex-start;
+    padding-top: 1rem;
+  }
+  
+  .apartment-modal-content {
+    max-height: calc(100vh - 2rem);
+    border-radius: 16px;
+    max-width: 100vw;
+    width: 100%;
+  }
+  
+  .apartment-modal-header {
+    padding: 1rem 1.5rem;
+    position: relative;
+  }
+  
+  .apartment-modal-close {
+    top: 1rem;
+    right: 1rem;
+    width: 36px;
+    height: 36px;
+    background: rgba(0, 0, 0, 0.7);
+  }
+  
+  .apartment-modal-nav {
+    padding: 0.4rem 0.8rem;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .modal-nav-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+  }
+  
+  .modal-counter {
+    font-size: 0.8rem;
+    min-width: 50px;
+  }
+  
+  .apartment-modal-body {
+    height: calc(100vh - 100px);
+    grid-template-rows: 40% 1fr;
+    overflow: hidden;
+  }
+  
+  .apartment-modal-info {
+    padding: 1.5rem;
+    gap: 1.5rem;
+    overflow-y: auto;
+  }
+  
+  .modal-title {
+    font-size: 1.75rem;
+    line-height: 1.2;
+  }
+  
+  .modal-badges {
+    gap: 0.3rem;
+    flex-wrap: wrap;
+  }
+  
+  .modal-badge {
+    padding: 0.3rem 0.8rem;
+    font-size: 0.7rem;
+  }
+  
+  .thumbnail-gallery {
+    padding: 0.75rem;
+    max-height: 80px;
+    gap: 0.3rem;
+  }
+  
+  .thumbnail-btn {
+    width: 60px;
+    height: 40px;
+    border-radius: 6px;
+  }
+  
+  .image-nav-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 0.9rem;
+  }
+  
+  .image-indicators {
+    bottom: 0.75rem;
+    gap: 0.3rem;
+    padding: 0.4rem 0.8rem;
+  }
+  
+  .image-indicator {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .modal-pricing {
+    padding: 1.5rem;
+    margin-top: 1rem;
+  }
+  
+  .price-amount {
+    font-size: 2rem;
+  }
+  
+  .info-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .info-item {
+    font-size: 0.85rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .amenities-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .main-image-container {
+    min-height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .apartment-modal-overlay {
+    padding: 0;
+    align-items: stretch;
+  }
+  
+  .apartment-modal-content {
+    border-radius: 0;
+    max-height: 100vh;
+    height: 100vh;
+    width: 100vw;
+    max-width: 100vw;
+  }
+  
+  .apartment-modal-header {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .apartment-modal-close {
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+  
+  .apartment-modal-nav {
+    padding: 0.3rem 0.6rem;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+  }
+  
+  .modal-nav-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 0.7rem;
+  }
+  
+  .apartment-modal-body {
+    grid-template-rows: 35% 1fr;
+    height: calc(100vh - 80px);
+  }
+  
+  .main-image-container {
+    min-height: 250px;
+  }
+  
+  .apartment-modal-info {
+    padding: 1rem;
+    gap: 1.25rem;
+  }
+  
+  .modal-title {
+    font-size: 1.5rem;
+  }
+  
+  .modal-location {
+    font-size: 0.9rem;
+  }
+  
+  .modal-description h3,
+  .modal-features h3,
+  .modal-amenities h3 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .modal-description p {
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  
+  .thumbnail-gallery {
+    padding: 0.5rem;
+    max-height: 70px;
+    gap: 0.25rem;
+  }
+  
+  .thumbnail-btn {
+    width: 50px;
+    height: 35px;
+    border-radius: 4px;
+  }
+  
+  .image-nav-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 0.8rem;
+  }
+  
+  .image-nav {
+    padding: 0 0.5rem;
+  }
+  
+  .image-indicators {
+    bottom: 0.5rem;
+    gap: 0.25rem;
+    padding: 0.3rem 0.6rem;
+  }
+  
+  .image-indicator {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .modal-pricing {
+    padding: 1.25rem;
+    margin-top: 0.5rem;
+  }
+  
+  .price-amount {
+    font-size: 1.75rem;
+  }
+  
+  .price-period {
+    font-size: 1rem;
+  }
+  
+  .modal-book-btn,
+  .modal-contact-btn {
+    padding: 0.875rem 1.25rem;
+    font-size: 0.9rem;
+  }
+  
+  .feature-item {
+    padding: 0.75rem;
+  }
+  
+  .feature-item i {
+    font-size: 1.25rem;
+  }
+  
+  .amenity-item {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+  
+  .modal-additional-info {
+    padding: 1rem;
+  }
+}
+
+/* No Images Placeholder Styles */
+.no-images-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(44, 85, 48, 0.05), rgba(44, 85, 48, 0.02));
+  color: var(--text-light);
+}
+
+.placeholder-content {
+  text-align: center;
+  padding: 2rem;
+}
+
+.placeholder-content i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: rgba(44, 85, 48, 0.3);
+}
+
+.placeholder-content p {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 0;
+  color: var(--text-light);
+}
+
+@media (max-width: 768px) {
+  .placeholder-content {
+    padding: 1.5rem;
+  }
+  
+  .placeholder-content i {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .placeholder-content p {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .placeholder-content {
+    padding: 1rem;
+  }
+  
+  .placeholder-content i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .placeholder-content p {
+    font-size: 0.9rem;
+  }
+}
+
+/* Touch-friendly improvements for mobile */
+@media (max-width: 768px) {
+  .image-nav-btn,
+  .modal-nav-btn,
+  .thumbnail-btn,
+  .image-indicator {
+    touch-action: manipulation;
+  }
+  
+  .apartment-modal-details {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Larger touch targets */
+  .image-indicator {
+    min-width: 32px;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .image-indicator::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transition: all 0.3s ease;
+  }
+  
+  .image-indicator.active::after,
+  .image-indicator:hover::after {
+    background: var(--white);
+    transform: scale(1.2);
+  }
+}
+
+/* Animation for smooth scrolling within modal */
+.apartment-modal-details {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for modal */
+.apartment-modal-details::-webkit-scrollbar {
+  width: 6px;
+}
+
+.apartment-modal-details::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.apartment-modal-details::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 3px;
+}
+
+.apartment-modal-details::-webkit-scrollbar-thumb:hover {
+  background: var(--secondary-color);
+}
+</style>
