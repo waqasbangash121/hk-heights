@@ -200,16 +200,33 @@ export default defineEventHandler(async (event) => {
     // Log full error object for debugging
     console.error('Apartments API error:', error)
     console.log('Falling back to mock data due to database error')
-    // Try to return as much error info as possible
+    // If debug requested, return detailed error info (safe: does not return DB URL value)
+    try {
+      const q = typeof getQuery === 'function' ? getQuery(event) : {}
+      const debugHeader = typeof getHeader === 'function' ? getHeader(event, 'x-debug') : null
+      const isDebug = (q && q.debug === '1') || debugHeader === '1'
+      if (isDebug) {
+        return {
+          success: false,
+          apartments: mockApartments,
+          mock: true,
+          source: 'error_fallback',
+          error_message: error?.message,
+          error_stack: error?.stack,
+          error_full: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+          env_DATABASE_URL_exists: !!process.env.DATABASE_URL
+        }
+      }
+    } catch (e) {
+      console.warn('Error preparing debug response:', e)
+    }
+
+    // Default fallback (no debug)
     return {
       success: false,
       apartments: mockApartments,
       mock: true,
-      source: 'error_fallback',
-      error_message: error.message,
-      error_stack: error.stack,
-      error_full: JSON.stringify(error, Object.getOwnPropertyNames(error)),
-      env_DATABASE_URL: process.env.DATABASE_URL || null
+      source: 'error_fallback'
     }
   } finally {
     try {
