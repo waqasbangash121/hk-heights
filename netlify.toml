@@ -3,7 +3,7 @@
   publish = "dist"
   
 [build.environment]
-  FORCE_CACHE_BUST = "1"
+  FORCE_CACHE_BUST = "2"
   NODE_VERSION = "20"
   # Disable framework detection to prevent Next.js plugin conflicts
   NPM_FLAGS = "--no-optional"
