@@ -183,15 +183,19 @@ export default defineEventHandler(async (event) => {
       source: 'database'
     }
   } catch (error) {
-    console.error('Apartments API error:', error.message)
+    // Log full error object for debugging
+    console.error('Apartments API error:', error)
     console.log('Falling back to mock data due to database error')
-    
-    return { 
-      success: true,
+    // Try to return as much error info as possible
+    return {
+      success: false,
       apartments: mockApartments,
       mock: true,
       source: 'error_fallback',
-      error_details: error.message
+      error_message: error.message,
+      error_stack: error.stack,
+      error_full: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+      env_DATABASE_URL: process.env.DATABASE_URL || null
     }
   } finally {
     try {
