@@ -1,5 +1,5 @@
 [build]
-  command = "pnpm install --frozen-lockfile && pnpm run build"
+  command = "pnpm install --frozen-lockfile --shamefully-hoist && pnpm run build"
   publish = ".output/public"
 
 [build.environment]
