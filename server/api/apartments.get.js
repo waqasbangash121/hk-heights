@@ -1,4 +1,6 @@
-import { PrismaClient } from '@prisma/client'
+// Note: do NOT import PrismaClient at module scope in serverless functions —
+// dynamic import inside the handler prevents import-time crashes when the
+// package or its native components are unavailable at bundle/load time.
 
 // Mock data as fallback when database is not available
 const mockApartments = [
@@ -146,11 +148,13 @@ export default defineEventHandler(async (event) => {
     }
 
     console.log('Attempting to connect to database...')
-    // Lazily create PrismaClient so import-time issues don't crash the function
+    // Lazily import and create PrismaClient so import-time issues don't crash the function
     try {
+      const prismaModule = await import('@prisma/client')
+      const PrismaClient = prismaModule?.PrismaClient || prismaModule?.default || prismaModule
       prisma = new PrismaClient()
     } catch (clientErr) {
-      console.error('PrismaClient instantiation failed:', clientErr)
+      console.error('PrismaClient dynamic import/instantiation failed:', clientErr)
       console.log('Falling back to mock data due to PrismaClient error')
       return {
         success: false,
@@ -230,9 +234,11 @@ export default defineEventHandler(async (event) => {
     }
   } finally {
     try {
-      await prisma.$disconnect()
+      if (prisma && typeof prisma.$disconnect === 'function') {
+        await prisma.$disconnect()
+      }
     } catch (e) {
-      console.warn('Error disconnecting Prisma:', e.message)
+      console.warn('Error disconnecting Prisma:', e?.message || e)
     }
   }
 })
