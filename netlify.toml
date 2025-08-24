@@ -1,6 +1,6 @@
 [build]
   command = "pnpm install --frozen-lockfile --shamefully-hoist && pnpm run build"
-  publish = ".output/public"
+  publish = "dist"
 
 [build.environment]
   FORCE_CACHE_BUST = "2"
