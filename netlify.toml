@@ -31,11 +31,14 @@
 [context.production.environment]
   NITRO_PRESET = "netlify"
   NODE_ENV = "production"
+  NODE_VERSION = "20"
 
 [context.deploy-preview.environment]
   NITRO_PRESET = "netlify"
   NODE_ENV = "production"
+  NODE_VERSION = "20"
 
 [context.branch-deploy.environment]
   NITRO_PRESET = "netlify"
   NODE_ENV = "production"
+  NODE_VERSION = "20"
