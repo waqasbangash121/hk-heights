@@ -11,10 +11,7 @@
 [functions]
   # Tell Netlify not to bundle @prisma/client fully in every function
   external_node_modules = ["@prisma/client"]
-  included_files = [
-    "node_modules/.prisma/client/**",
-    "node_modules/@prisma/client/**"
-  ]
+  included_files = ["node_modules/@prisma/client/**"]
 
 # Security headers
 [[headers]]
