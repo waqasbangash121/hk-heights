@@ -1,7 +1,6 @@
-import getPrisma from '../../utils/getPrisma'
+import { sql } from '../../utils/neon'
 
 export default defineEventHandler(async (event) => {
-  let prisma
   // Simple auth check
   const authHeader = getHeader(event, 'authorization')
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -16,36 +15,29 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-  try { prisma = new PrismaClient() } catch (clientErr) { console.error('PrismaClient instantiation failed:', clientErr); return { error: 'Database client init failed', details: clientErr?.message } }
     // If setting as main image, unset other main images first
     if (isMain) {
-      await prisma.apartmentImage.updateMany({
-        where: { apartmentId: parseInt(apartmentId) },
-        data: { isMain: false }
-      })
+      await sql`UPDATE "ApartmentImage" SET "isMain" = false WHERE "apartmentId" = ${parseInt(apartmentId)}`;
     }
 
     // Get current max sort order
-    const maxSortOrder = await prisma.apartmentImage.findFirst({
-      where: { apartmentId: parseInt(apartmentId) },
-      orderBy: { sortOrder: 'desc' },
-      select: { sortOrder: true }
-    })
+    const maxSortOrderResult = await sql`
+      SELECT MAX("sortOrder") AS max_order FROM "ApartmentImage" WHERE "apartmentId" = ${parseInt(apartmentId)}
+    `;
+    const maxSortOrder = maxSortOrderResult[0]?.max_order || 0;
 
-    const image = await prisma.apartmentImage.create({
-      data: {
-        apartmentId: parseInt(apartmentId),
-        imageUrl,
-        altText: altText || '',
-        isMain: isMain || false,
-        sortOrder: (maxSortOrder?.sortOrder || 0) + 1
-      }
-    })
+    // Insert new image
+    const images = await sql`
+      INSERT INTO "ApartmentImage" (
+        "apartmentId", "imageUrl", "altText", "isMain", "sortOrder"
+      ) VALUES (
+        ${parseInt(apartmentId)}, ${imageUrl}, ${altText || ''}, ${!!isMain}, ${maxSortOrder + 1}
+      ) RETURNING *
+    `;
+    const image = images[0];
 
-    return { success: true, image }
+    return { success: true, image };
   } catch (error) {
-    return { error: error.message }
-  } finally {
-  try { if (prisma) await prisma.$disconnect() } catch (e) { console.warn('Error disconnecting Prisma:', e.message) }
+    return { error: error.message };
   }
 })

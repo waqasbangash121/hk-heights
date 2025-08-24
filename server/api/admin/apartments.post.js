@@ -1,7 +1,6 @@
-import getPrisma from '../../utils/getPrisma'
+import { sql } from '../../utils/neon'
 
 export default defineEventHandler(async (event) => {
-  let prisma
   // Simple auth check
   const authHeader = getHeader(event, 'authorization')
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -25,46 +24,40 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    try {
-      prisma = new PrismaClient()
-    } catch (clientErr) {
-      console.error('PrismaClient instantiation failed:', clientErr)
-      return { error: 'Database client init failed', details: clientErr?.message }
-    }
-    const apartment = await prisma.apartment.create({
-      data: {
-        name,
-        description,
-        bedrooms: parseInt(bedrooms),
-        bathrooms: parseInt(bathrooms),
-        maxGuests: parseInt(maxGuests),
-        pricePerNight: parseFloat(pricePerNight),
-        propertyId: parseInt(propertyId),
-        amenities: {
-          create: amenityIds.map(amenityId => ({
-            amenityId: parseInt(amenityId)
-          }))
-        }
-      },
-      include: {
-        property: true,
-        images: true,
-        amenities: {
-          include: {
-            amenity: true
-          }
-        }
-      }
-    })
+    // Create apartment
+    const apartments = await sql`
+      INSERT INTO "Apartment" (
+        "name", "description", "bedrooms", "bathrooms", "maxGuests", "pricePerNight", "propertyId"
+      ) VALUES (
+        ${name}, ${description}, ${parseInt(bedrooms)}, ${parseInt(bathrooms)},
+        ${parseInt(maxGuests)}, ${parseFloat(pricePerNight)}, ${parseInt(propertyId)}
+      ) RETURNING *
+    `;
+    const apartment = apartments[0];
 
-    return { success: true, apartment }
-  } catch (error) {
-    return { error: error.message }
-  } finally {
-    try {
-      if (prisma) await prisma.$disconnect()
-    } catch (e) {
-      console.warn('Error disconnecting Prisma:', e.message)
+    // Insert amenities if provided
+    if (amenityIds.length > 0) {
+      await Promise.all(
+        amenityIds.map(amenityId =>
+          sql`INSERT INTO "ApartmentAmenity" ("apartmentId", "amenityId") VALUES (${apartment.id}, ${parseInt(amenityId)})`
+        )
+      );
     }
+
+    // Fetch property, images, and amenities for response
+    const [property] = await sql`SELECT * FROM "Property" WHERE id = ${apartment.propertyId}`;
+    const images = await sql`SELECT * FROM "ApartmentImage" WHERE "apartmentId" = ${apartment.id}`;
+    const amenities = await sql`
+      SELECT aa.*, a.* FROM "ApartmentAmenity" aa
+      JOIN "Amenity" a ON aa."amenityId" = a.id
+      WHERE aa."apartmentId" = ${apartment.id}
+    `;
+    apartment.property = property;
+    apartment.images = images;
+    apartment.amenities = amenities;
+
+    return { success: true, apartment };
+  } catch (error) {
+    return { error: error.message };
   }
 })

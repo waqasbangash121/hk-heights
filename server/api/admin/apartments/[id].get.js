@@ -1,7 +1,6 @@
-import getPrisma from '../../../../server/utils/getPrisma'
+import { sql } from '../../../../server/utils/neon'
 
 export default defineEventHandler(async (event) => {
-  let prisma
   // Simple auth check
   const authHeader = getHeader(event, 'authorization')
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -11,40 +10,26 @@ export default defineEventHandler(async (event) => {
   const apartmentId = getRouterParam(event, 'id')
 
   try {
-    try {
-      prisma = new PrismaClient()
-    } catch (clientErr) {
-      console.error('PrismaClient instantiation failed:', clientErr)
-      return { error: 'Database client init failed', details: clientErr?.message }
-    }
-
-    const apartment = await prisma.apartment.findUnique({
-      where: { id: parseInt(apartmentId) },
-      include: {
-        property: true,
-        images: {
-          orderBy: { sortOrder: 'asc' }
-        },
-        amenities: {
-          include: {
-            amenity: true
-          }
-        }
-      }
-    })
-
+    // Fetch apartment
+  const apartments = await sql`SELECT * FROM "Apartment" WHERE id = ${parseInt(apartmentId)}`;
+    const apartment = apartments[0];
     if (!apartment) {
-      return { error: 'Apartment not found' }
+      return { error: 'Apartment not found' };
     }
+    // Fetch property, images, amenities
+    const [property] = await sql`SELECT * FROM "Property" WHERE id = ${apartment.propertyId}`;
+    const images = await sql`SELECT * FROM "ApartmentImage" WHERE "apartmentId" = ${apartment.id} ORDER BY "sortOrder" ASC`;
+    const amenities = await sql`
+      SELECT aa.*, a.* FROM "ApartmentAmenity" aa
+      JOIN "Amenity" a ON aa."amenityId" = a.id
+      WHERE aa."apartmentId" = ${apartment.id}
+    `;
+    apartment.property = property;
+    apartment.images = images;
+    apartment.amenities = amenities;
 
-    return { success: true, apartment }
+    return { success: true, apartment };
   } catch (error) {
-    return { error: error.message }
-  } finally {
-    try {
-      if (prisma) await prisma.$disconnect()
-    } catch (e) {
-      console.warn('Error disconnecting Prisma:', e.message)
-    }
+    return { error: error.message };
   }
 })

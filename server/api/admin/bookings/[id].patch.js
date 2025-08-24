@@ -1,7 +1,6 @@
-import getPrisma from '../../../../server/utils/getPrisma'
+import { sql } from '../../../../server/utils/neon'
 
 export default defineEventHandler(async (event) => {
-  let prisma
   // Simple auth check
   const authHeader = getHeader(event, 'authorization')
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -22,24 +21,25 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    try { prisma = new PrismaClient() } catch (clientErr) { console.error('PrismaClient instantiation failed:', clientErr); return { error: 'Database client init failed', details: clientErr?.message } }
-    const booking = await prisma.booking.update({
-      where: { id: parseInt(bookingId) },
-      data: { status },
-      include: {
-        guest: true,
-        apartment: {
-          include: {
-            property: true
-          }
-        }
-      }
-    })
+    // Update booking status
+    const bookings = await sql`
+      UPDATE "Booking"
+      SET "status" = ${status}
+      WHERE id = ${parseInt(bookingId)}
+      RETURNING *
+    `;
+    const booking = bookings[0];
+    if (!booking) return { error: 'Booking not found' };
 
-    return { success: true, booking }
+    // Fetch guest, apartment, and property details
+  const [guest] = await sql`SELECT * FROM "Guest" WHERE id = ${booking.guestId}`;
+  const [apartment] = await sql`SELECT * FROM "Apartment" WHERE id = ${booking.apartmentId}`;
+  const [property] = apartment ? await sql`SELECT * FROM "Property" WHERE id = ${apartment.propertyId}` : [null];
+    booking.guest = guest;
+    booking.apartment = apartment ? { ...apartment, property } : null;
+
+    return { success: true, booking };
   } catch (error) {
-    return { error: error.message }
-  } finally {
-    try { if (prisma) await prisma.$disconnect() } catch (e) { console.warn('Error disconnecting Prisma:', e.message) }
+    return { error: error.message };
   }
 })

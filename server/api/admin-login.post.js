@@ -1,8 +1,7 @@
-import getPrisma from '../utils/getPrisma'
+import { sql } from '../utils/neon'
 import bcrypt from 'bcryptjs'
 
 export default defineEventHandler(async (event) => {
-  let prisma
   if (event.method !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' }
   }
@@ -27,18 +26,13 @@ export default defineEventHandler(async (event) => {
     }
 
     console.log('Attempting to find user in database...')
-    try {
-      prisma = await getPrisma()
-    } catch (clientErr) {
-      console.error('PrismaClient instantiation failed:', clientErr)
-      return { error: 'Database client init failed', details: clientErr?.message }
-    }
 
-    const user = await prisma.adminUser.findUnique({
-      where: { username }
-    })
+  // Query admin user by username
+  const users = await sql`SELECT * FROM "AdminUser" WHERE "username" = ${username}`;
+  const user = users[0];
 
-    console.log('User found:', !!user)
+
+  console.log('User found:', !!user)
 
     if (!user) {
       return { error: 'Invalid credentials' }
@@ -61,10 +55,7 @@ export default defineEventHandler(async (event) => {
       statusCode: 500
     }
   } finally {
-    try {
-      if (prisma) await prisma.$disconnect()
-    } catch (e) {
-      console.warn('Error disconnecting Prisma:', e.message)
-    }
+
+  // No disconnect needed for Neon
   }
 })

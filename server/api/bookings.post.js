@@ -1,7 +1,6 @@
-import getPrisma from '../utils/getPrisma'
+import { sql } from '../utils/neon'
 
 export default defineEventHandler(async (event) => {
-  let prisma
   const body = await readBody(event)
   const { 
     firstName, 
@@ -21,76 +20,52 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    try { prisma = await getPrisma() } catch (clientErr) { console.error('PrismaClient instantiation failed:', clientErr); return { error: 'Database client init failed', details: clientErr?.message } }
     // Check if apartment is available for the selected dates
-    const existingBooking = await prisma.booking.findFirst({
-      where: {
-        apartmentId: parseInt(apartmentId),
-        status: { not: 'CANCELLED' },
-        OR: [
-          {
-            checkIn: { lte: new Date(checkIn) },
-            checkOut: { gt: new Date(checkIn) }
-          },
-          {
-            checkIn: { lt: new Date(checkOut) },
-            checkOut: { gte: new Date(checkOut) }
-          },
-          {
-            checkIn: { gte: new Date(checkIn) },
-            checkOut: { lte: new Date(checkOut) }
-          }
-        ]
-      }
-    })
-
-    if (existingBooking) {
-      return { error: 'Apartment is not available for the selected dates' }
+    const existingBooking = await sql`
+      SELECT * FROM "Booking"
+      WHERE "apartmentId" = ${parseInt(apartmentId)}
+        AND status != 'CANCELLED'
+        AND (
+          ("checkIn" <= ${new Date(checkIn)} AND "checkOut" > ${new Date(checkIn)}) OR
+          ("checkIn" < ${new Date(checkOut)} AND "checkOut" >= ${new Date(checkOut)}) OR
+          ("checkIn" >= ${new Date(checkIn)} AND "checkOut" <= ${new Date(checkOut)})
+        )
+      LIMIT 1
+    `;
+    if (existingBooking.length > 0) {
+      return { error: 'Apartment is not available for the selected dates' };
     }
 
     // Create or find guest
-    let guest = await prisma.guest.findUnique({
-      where: { email }
-    })
-
+  let guest = (await sql`SELECT * FROM "Guest" WHERE "email" = ${email} LIMIT 1`)[0];
     if (!guest) {
-      guest = await prisma.guest.create({
-        data: {
-          firstName,
-          lastName,
-          email,
-          phone
-        }
-      })
+      const guests = await sql`
+        INSERT INTO "Guest" ("firstName", "lastName", "email", "phone")
+        VALUES (${firstName}, ${lastName}, ${email}, ${phone})
+        RETURNING *
+      `;
+      guest = guests[0];
     }
 
     // Create booking
-    const booking = await prisma.booking.create({
-      data: {
-        guestId: guest.id,
-        apartmentId: parseInt(apartmentId),
-        checkIn: new Date(checkIn),
-        checkOut: new Date(checkOut),
-        guests: parseInt(guests),
-        totalAmount: parseFloat(totalAmount),
-        notes,
-        status: 'PENDING'
-      },
-      include: {
-        guest: true,
-        apartment: {
-          include: {
-            property: true
-          }
-        }
-      }
-    })
+    const bookings = await sql`
+      INSERT INTO "Booking" (
+        "guestId", "apartmentId", "checkIn", "checkOut", "guests", "totalAmount", "notes", "status"
+      ) VALUES (
+        ${guest.id}, ${parseInt(apartmentId)}, ${new Date(checkIn)}, ${new Date(checkOut)},
+        ${parseInt(guests)}, ${parseFloat(totalAmount)}, ${notes}, 'PENDING'
+      ) RETURNING *
+    `;
+    const booking = bookings[0];
 
-    return { success: true, booking }
+    // Fetch guest and apartment details for response
+  const [apartment] = await sql`SELECT * FROM "Apartment" WHERE id = ${booking.apartmentId}`;
+  const [property] = apartment ? await sql`SELECT * FROM "Property" WHERE id = ${apartment.propertyId}` : [null];
+    booking.guest = guest;
+    booking.apartment = apartment ? { ...apartment, property } : null;
+
+    return { success: true, booking };
   } catch (error) {
-    return { error: error.message }
-  }
-  finally {
-    try { if (prisma) await prisma.$disconnect() } catch (e) { console.warn('Error disconnecting Prisma:', e.message) }
+    return { error: error.message };
   }
 })
