@@ -23,3 +23,25 @@ pkg.dependencies['@prisma/client'] = pkg.dependencies['@prisma/client'] || rootD
 pkg.dependencies['pg'] = pkg.dependencies['pg'] || rootDeps['pg'] || '^8.16.3'
 fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2))
 console.log('Injected @prisma/client and pg into', pkgPath)
+
+// Also copy the actual installed package folders into the function node_modules
+const targetNodeModules = path.resolve(path.dirname(pkgPath), 'node_modules')
+if (!fs.existsSync(targetNodeModules)) fs.mkdirSync(targetNodeModules, { recursive: true })
+
+function copyPkg(pkgName) {
+  try {
+    const resolved = require.resolve(pkgName + '/package.json')
+    const pkgRoot = path.dirname(resolved)
+    const dest = path.join(targetNodeModules, pkgName)
+    console.log('Copying', pkgRoot, '->', dest)
+    // Use recursive copy
+    fs.rmSync(dest, { recursive: true, force: true })
+    fs.cpSync(pkgRoot, dest, { recursive: true })
+    console.log('Copied', pkgName, 'to function node_modules')
+  } catch (e) {
+    console.warn('Could not copy', pkgName, ':', e.message)
+  }
+}
+
+copyPkg('@prisma/client')
+copyPkg('pg')

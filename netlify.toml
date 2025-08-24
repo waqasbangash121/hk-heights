@@ -1,5 +1,8 @@
 [build]
-  command = "pnpm install --frozen-lockfile --shamefully-hoist && pnpm run build"
+  # Install at root, run the project build (which generates .netlify/functions-internal)
+  # then explicitly install production deps into the generated function package so
+  # Netlify's runtime can resolve runtime-only packages like @prisma/client.
+  command = "pnpm install --frozen-lockfile --shamefully-hoist && pnpm run build && pnpm --prefix .netlify/functions-internal/server install --prod"
   publish = "dist"
 
 [build.environment]

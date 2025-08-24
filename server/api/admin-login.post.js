@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import getPrisma from '../utils/getPrisma'
 import bcrypt from 'bcryptjs'
 
 export default defineEventHandler(async (event) => {
@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
 
     console.log('Attempting to find user in database...')
     try {
-      prisma = new PrismaClient()
+      prisma = await getPrisma()
     } catch (clientErr) {
       console.error('PrismaClient instantiation failed:', clientErr)
       return { error: 'Database client init failed', details: clientErr?.message }

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import getPrisma from '../utils/getPrisma'
 
 export default defineEventHandler(async (event) => {
   let prisma
@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-  try { prisma = new PrismaClient() } catch (clientErr) { console.error('PrismaClient instantiation failed:', clientErr); return { error: 'Database client init failed', details: clientErr?.message } }
+    try { prisma = await getPrisma() } catch (clientErr) { console.error('PrismaClient instantiation failed:', clientErr); return { error: 'Database client init failed', details: clientErr?.message } }
     // Check if apartment is available for the selected dates
     const existingBooking = await prisma.booking.findFirst({
       where: {

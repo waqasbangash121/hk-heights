@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import getPrisma from '../../../../server/utils/getPrisma'
 
 export default defineEventHandler(async (event) => {
   let prisma
