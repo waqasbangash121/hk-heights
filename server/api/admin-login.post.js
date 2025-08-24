@@ -7,6 +7,16 @@ export default defineEventHandler(async (event) => {
   if (event.method !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' }
   }
+  
+  // Check if DATABASE_URL is configured
+  if (!process.env.DATABASE_URL) {
+    console.error('DATABASE_URL not configured')
+    return { 
+      error: 'Database not configured',
+      statusCode: 500
+    }
+  }
+  
   const body = await readBody(event)
   const { username, password } = body || {}
   
@@ -39,7 +49,10 @@ export default defineEventHandler(async (event) => {
     return { success: true, token }
   } catch (err) {
     console.error('Login error:', err)
-    return { error: err.message }
+    return { 
+      error: err.message,
+      statusCode: 500
+    }
   } finally {
     await prisma.$disconnect()
   }
