@@ -9,9 +9,11 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")        // Data Proxy at runtime
+  directUrl  = env("DIRECT_DATABASE_URL") // Neon direct for migrations
 }
+
 
 model AdminUser {
   id       Int    @id @default(autoincrement())

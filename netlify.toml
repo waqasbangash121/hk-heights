@@ -1,7 +1,5 @@
 [build]
-  # Install at root, run the project build (which generates .netlify/functions-internal)
-  # then explicitly install production deps into the generated function package so
-  # Netlify's runtime can resolve runtime-only packages like @prisma/client.
+  # Install dependencies, build, then install production-only deps for serverless functions
   command = "pnpm install --frozen-lockfile --shamefully-hoist && pnpm run build && pnpm --prefix .netlify/functions-internal/server install --prod"
   publish = "dist"
 
@@ -10,7 +8,12 @@
   NODE_VERSION = "20"
   PACKAGE_MANAGER = "pnpm"
 
-# Headers for security and performance
+[functions]
+  # Tell Netlify not to bundle @prisma/client fully in every function
+  external_node_modules = ["@prisma/client"]
+  included_files = ["node_modules/.prisma/client/**"]
+
+# Security headers
 [[headers]]
   for = "/*"
   [headers.values]
