@@ -35,6 +35,9 @@ importers:
       pg-types:
         specifier: ^4.1.0
         version: 4.1.0
+      pgpass:
+        specifier: ^1.0.5
+        version: 1.0.5
       prisma:
         specifier: ^6.14.0
         version: 6.14.0(typescript@5.9.2)
