@@ -6,7 +6,8 @@
     "node": "18.x || 20.x"
   },
   "scripts": {
-  "build": "nuxt prepare && prisma generate && nuxt build && node ./scripts/inject-function-deps.cjs",
+    "postinstall": "prisma generate",
+    "build": "nuxt prepare && prisma generate && nuxt build && node ./scripts/inject-function-deps.cjs",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
