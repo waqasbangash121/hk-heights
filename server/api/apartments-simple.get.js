@@ -1,5 +1,5 @@
-// Mock data as fallback when database is not available
-const mockApartments = [
+// Simple apartments endpoint without Prisma
+const simpleApartments = [
   {
     id: 1,
     name: 'Deluxe Mountain Suite',
@@ -131,23 +131,19 @@ const mockApartments = [
 
 export default defineEventHandler(async (event) => {
   try {
-    // For now, always return mock data to avoid any Prisma issues
-    console.log('Apartments API called, returning mock data')
+    // Simple delay to simulate API call
+    await new Promise(resolve => setTimeout(resolve, 100))
     
     return { 
       success: true, 
-      apartments: mockApartments,
-      mock: true,
-      timestamp: new Date().toISOString()
+      apartments: simpleApartments,
+      source: 'simple-static'
     }
   } catch (error) {
-    console.error('Apartments API error:', error)
-    
-    return { 
+    return {
       success: false,
       error: error.message,
-      apartments: [],
-      timestamp: new Date().toISOString()
+      source: 'simple-static'
     }
   }
 })

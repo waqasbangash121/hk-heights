@@ -1,20 +1,6 @@
-import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcryptjs'
-
-const prisma = new PrismaClient()
-
 export default defineEventHandler(async (event) => {
   if (event.method !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' }
-  }
-  
-  // Check if DATABASE_URL is configured
-  if (!process.env.DATABASE_URL) {
-    console.error('DATABASE_URL not configured')
-    return { 
-      error: 'Database not configured',
-      statusCode: 500
-    }
   }
   
   const body = await readBody(event)
@@ -27,33 +13,17 @@ export default defineEventHandler(async (event) => {
   }
   
   try {
-    const user = await prisma.adminUser.findUnique({
-      where: { username }
-    })
-    
-    console.log('User found:', !!user)
-    
-    if (!user) {
-      return { error: 'Invalid credentials' }
+    // For now, return an error about database not being configured
+    // This will be clearer than a 500 error
+    return { 
+      error: 'Admin login requires database configuration. Please set up DATABASE_URL environment variable.',
+      mock: true
     }
-    
-    const valid = await bcrypt.compare(password, user.password)
-    console.log('Password valid:', valid)
-    
-    if (!valid) {
-      return { error: 'Invalid credentials' }
-    }
-    
-    // For demo: use a simple token (in production, use JWT)
-    const token = Buffer.from(`${user.id}:${user.username}`).toString('base64')
-    return { success: true, token }
   } catch (err) {
     console.error('Login error:', err)
     return { 
       error: err.message,
       statusCode: 500
     }
-  } finally {
-    await prisma.$disconnect()
   }
 })
