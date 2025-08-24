@@ -5,6 +5,12 @@
 [build.environment]
   NODE_VERSION = "20"
 
+# Disable conflicting plugins
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+  [plugins.inputs]
+    disable = true
+
 # Headers for security and performance
 [[headers]]
   for = "/*"
