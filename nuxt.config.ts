@@ -12,7 +12,10 @@ export default defineNuxtConfig({
     // Fix Prisma build issues
     rollupConfig: {
       external: ['@prisma/client']
-    }
+    },
+    // Node.js compatibility
+    node: true,
+    compatibilityDate: '2024-11-18'
   },
 
   // Runtime config for environment variables
@@ -120,6 +123,10 @@ export default defineNuxtConfig({
     },
     optimizeDeps: {
       exclude: ['@prisma/client']
+    },
+    // Node.js compatibility for newer versions
+    esbuild: {
+      target: 'node18'
     }
   },
 
