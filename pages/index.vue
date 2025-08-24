@@ -172,95 +172,131 @@
             </p>
           </div>
 
-          <div 
-            class="apartments-grid force-grid-layout"
-          >
-            <!-- Loading State -->
-            <div v-if="apartmentsLoading" class="loading-grid">
-              <div class="apartment-card-skeleton" v-for="n in 3" :key="n">
-                <div class="skeleton-image"></div>
-                <div class="skeleton-content">
-                  <div class="skeleton-title"></div>
-                  <div class="skeleton-description"></div>
-                  <div class="skeleton-features"></div>
-                  <div class="skeleton-footer"></div>
-                </div>
-              </div>
-            </div>
+          <!-- Apartment Carousel Container -->
+          <div class="apartment-carousel-container">
+            <!-- Scroll Navigation Buttons -->
+            <button 
+              v-if="apartments && apartments.length > 2 && canScrollLeft"
+              class="scroll-button scroll-left"
+              @click="scrollLeft"
+              aria-label="Scroll left"
+            >
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            
+            <button 
+              v-if="apartments && apartments.length > 2 && canScrollRight"
+              class="scroll-button scroll-right"
+              @click="scrollRight"
+              aria-label="Scroll right"
+            >
+              <i class="fas fa-chevron-right"></i>
+            </button>
 
-            <!-- Error State -->
-            <div v-else-if="apartmentsError" class="error-state">
-              <div class="error-card">
-                <i class="fas fa-exclamation-triangle"></i>
-                <h3>Unable to Load Apartments</h3>
-                <p>{{ apartmentsError }}</p>
-                <button class="btn btn-primary" @click="fetchApartments">
-                  <i class="fas fa-redo"></i>
-                  Try Again
-                </button>
-              </div>
-            </div>
-
-            <!-- Success State with Apartments - DIRECT GRID CHILDREN -->
-            <template v-else-if="apartments && apartments.length > 0">
-              <div 
-                v-for="(apartment, index) in apartments" 
-                :key="`apartment-${apartment.id}`"
-                class="apartment-card"
-                @click="openApartmentModal(apartment)"
-                role="button"
-                tabindex="0"
-                @keydown.enter="openApartmentModal(apartment)"
-                @keydown.space="openApartmentModal(apartment)"
-              >
-                <div class="apartment-image">
-                  <img 
-                    :src="getApartmentMainImage(apartment)" 
-                    :alt="`${apartment.name} - ${apartment.description}`"
-                    loading="lazy"
-                    @error="handleImageError"
-                  >
-                  <div v-if="index === 0" class="apartment-badge">Most Popular</div>
-                  <div v-else-if="Number(apartment.pricePerNight) > 15000" class="apartment-badge">Premium</div>
-                </div>
-                <div class="apartment-content">
-                  <h3 class="apartment-title">{{ apartment.name }}</h3>
-                  <p class="apartment-description">
-                    {{ apartment.description || 'Luxurious apartment with modern amenities and stunning views.' }}
-                  </p>
-                  <ul class="apartment-features">
-                    <li><i class="fas fa-bed"></i> {{ apartment.bedrooms }} {{ apartment.bedrooms === 1 ? 'Bedroom' : 'Bedrooms' }}</li>
-                    <li><i class="fas fa-bath"></i> {{ apartment.bathrooms }} {{ apartment.bathrooms === 1 ? 'Bathroom' : 'Bathrooms' }}</li>
-                    <li><i class="fas fa-users"></i> Up to {{ apartment.maxGuests }} Guests</li>
-                    <li v-if="apartment.amenities && apartment.amenities.length > 0">
-                      <i :class="getFirstAmenityIcon(apartment)"></i> 
-                      {{ getFirstAmenityName(apartment) }}
-                      <span v-if="apartment.amenities.length > 1" class="amenity-count">
-                        +{{ apartment.amenities.length - 1 }} more
-                      </span>
-                    </li>
-                  </ul>
-                  <div class="apartment-footer">
-                    <span class="apartment-price">From PKR {{ formatPrice(apartment.pricePerNight) }}/night</span>
-                    <button 
-                      class="btn btn-outline" 
-                      @click.stop="openBookingModal(apartment)"
-                      @keydown.stop
-                    >
-                      Book Now
-                    </button>
+            <div 
+              ref="apartmentsContainer"
+              class="apartments-scroll-container"
+              :class="{ 'scrollable': apartments && apartments.length > 2 }"
+              @scroll="updateScrollButtons"
+            >
+              <!-- Loading State -->
+              <div v-if="apartmentsLoading" class="loading-grid">
+                <div class="apartment-card-skeleton" v-for="n in 3" :key="n">
+                  <div class="skeleton-image"></div>
+                  <div class="skeleton-content">
+                    <div class="skeleton-title"></div>
+                    <div class="skeleton-description"></div>
+                    <div class="skeleton-features"></div>
+                    <div class="skeleton-footer"></div>
                   </div>
                 </div>
               </div>
-            </template>
 
-            <!-- Empty State -->
-            <div v-else class="empty-state">
-              <div class="empty-card">
-                <i class="fas fa-home"></i>
-                <h3>No Apartments Available</h3>
-                <p>Check back later for available apartments.</p>
+              <!-- Error State -->
+              <div v-else-if="apartmentsError" class="error-state">
+                <div class="error-card">
+                  <i class="fas fa-exclamation-triangle"></i>
+                  <h3>Unable to Load Apartments</h3>
+                  <p>{{ apartmentsError }}</p>
+                  <button class="btn btn-primary" @click="fetchApartments">
+                    <i class="fas fa-redo"></i>
+                    Try Again
+                  </button>
+                </div>
               </div>
+
+              <!-- Success State with Apartments -->
+              <div v-else-if="apartments && apartments.length > 0" class="apartments-grid">
+                <div 
+                  v-for="(apartment, index) in apartments" 
+                  :key="`apartment-${apartment.id}`"
+                  class="apartment-card"
+                  @click="openApartmentModal(apartment)"
+                  role="button"
+                  tabindex="0"
+                  @keydown.enter="openApartmentModal(apartment)"
+                  @keydown.space="openApartmentModal(apartment)"
+                >
+                  <div class="apartment-image">
+                    <img 
+                      :src="getApartmentMainImage(apartment)" 
+                      :alt="`${apartment.name} - ${apartment.description}`"
+                      loading="lazy"
+                      @error="handleImageError"
+                    >
+                    <div v-if="index === 0" class="apartment-badge">Most Popular</div>
+                    <div v-else-if="Number(apartment.pricePerNight) > 15000" class="apartment-badge">Premium</div>
+                  </div>
+                  <div class="apartment-content">
+                    <h3 class="apartment-title">{{ apartment.name }}</h3>
+                    <p class="apartment-description">
+                      {{ apartment.description || 'Luxurious apartment with modern amenities and stunning views.' }}
+                    </p>
+                    <ul class="apartment-features">
+                      <li><i class="fas fa-bed"></i> {{ apartment.bedrooms }} {{ apartment.bedrooms === 1 ? 'Bedroom' : 'Bedrooms' }}</li>
+                      <li><i class="fas fa-bath"></i> {{ apartment.bathrooms }} {{ apartment.bathrooms === 1 ? 'Bathroom' : 'Bathrooms' }}</li>
+                      <li><i class="fas fa-users"></i> Up to {{ apartment.maxGuests }} Guests</li>
+                      <li v-if="apartment.amenities && apartment.amenities.length > 0">
+                        <i :class="getFirstAmenityIcon(apartment)"></i> 
+                        {{ getFirstAmenityName(apartment) }}
+                        <span v-if="apartment.amenities.length > 1" class="amenity-count">
+                          +{{ apartment.amenities.length - 1 }} more
+                        </span>
+                      </li>
+                    </ul>
+                    <div class="apartment-footer">
+                      <span class="apartment-price">From PKR {{ formatPrice(apartment.pricePerNight) }}/night</span>
+                      <button 
+                        class="btn btn-outline" 
+                        @click.stop="openBookingModal(apartment)"
+                        @keydown.stop
+                      >
+                        Book Now
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Empty State -->
+              <div v-else class="empty-state">
+                <div class="empty-card">
+                  <i class="fas fa-home"></i>
+                  <h3>No Apartments Available</h3>
+                  <p>Check back later for available apartments.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Scroll Indicators -->
+            <div v-if="apartments && apartments.length > 2" class="scroll-indicators">
+              <div 
+                v-for="(page, index) in Math.ceil(apartments.length / 2)" 
+                :key="`indicator-${index}`"
+                class="scroll-indicator"
+                :class="{ active: currentPage === index }"
+                @click="scrollToPage(index)"
+              ></div>
             </div>
           </div>
         </div>
@@ -1000,7 +1036,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, nextTick } from 'vue'
+import { ref, onMounted, computed, nextTick, watch } from 'vue'
+
+// Add FontAwesome icons
+useHead({
+  link: [
+    {
+      rel: 'stylesheet',
+      href: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
+      integrity: 'sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==',
+      crossorigin: 'anonymous'
+    }
+  ]
+})
 
 // State
 const isScrolled = ref(false)
@@ -1022,6 +1070,12 @@ const modalImageLoading = ref(false)
 const apartments = ref([])
 const apartmentsLoading = ref(true)
 const apartmentsError = ref(null)
+
+// Horizontal scroll functionality
+const apartmentsContainer = ref(null)
+const canScrollLeft = ref(false)
+const canScrollRight = ref(false)
+const currentPage = ref(0)
 
 // Booking form
 const bookingForm = ref({
@@ -1103,21 +1157,97 @@ const fetchApartments = async () => {
     apartmentsLoading.value = true
     apartmentsError.value = null
     
+    console.log('🔍 Fetching apartments from database...')
     const response = await $fetch('/api/apartments')
     
     if (response?.success) {
       apartments.value = response.apartments || []
+      console.log(`✅ Loaded ${apartments.value.length} apartments`)
     } else {
       throw new Error(response?.error || 'Failed to fetch apartments')
     }
   } catch (error) {
-    console.error('Error fetching apartments:', error)
+    console.error('❌ Error fetching apartments:', error)
     apartmentsError.value = error.message || 'Failed to load apartments'
     apartments.value = []
   } finally {
     apartmentsLoading.value = false
   }
 }
+
+// Horizontal scroll methods
+const scrollLeft = () => {
+  const container = apartmentsContainer.value
+  if (!container) return
+  
+  const cardWidth = container.querySelector('.apartment-card')?.offsetWidth || 0
+  const gap = 32 // 2rem gap
+  const scrollAmount = (cardWidth + gap) * 2 // Scroll by 2 cards
+  
+  container.scrollBy({
+    left: -scrollAmount,
+    behavior: 'smooth'
+  })
+}
+
+const scrollRight = () => {
+  const container = apartmentsContainer.value
+  if (!container) return
+  
+  const cardWidth = container.querySelector('.apartment-card')?.offsetWidth || 0
+  const gap = 32 // 2rem gap
+  const scrollAmount = (cardWidth + gap) * 2 // Scroll by 2 cards
+  
+  container.scrollBy({
+    left: scrollAmount,
+    behavior: 'smooth'
+  })
+}
+
+const scrollToPage = (pageIndex) => {
+  const container = apartmentsContainer.value
+  if (!container) return
+  
+  const cardWidth = container.querySelector('.apartment-card')?.offsetWidth || 0
+  const gap = 32 // 2rem gap
+  const scrollAmount = (cardWidth + gap) * 2 * pageIndex
+  
+  container.scrollTo({
+    left: scrollAmount,
+    behavior: 'smooth'
+  })
+  
+  currentPage.value = pageIndex
+}
+
+const updateScrollButtons = () => {
+  const container = apartmentsContainer.value
+  if (!container) return
+  
+  canScrollLeft.value = container.scrollLeft > 0
+  canScrollRight.value = container.scrollLeft < (container.scrollWidth - container.clientWidth)
+  
+  // Update current page
+  const cardWidth = container.querySelector('.apartment-card')?.offsetWidth || 0
+  const gap = 32
+  const pageWidth = (cardWidth + gap) * 2
+  currentPage.value = Math.round(container.scrollLeft / pageWidth)
+  
+  // Hide/show fade gradient and arrow on mobile based on scroll position
+  if (window.innerWidth <= 767) {
+    const isAtEnd = container.scrollLeft >= (container.scrollWidth - container.clientWidth - 10)
+    container.style.setProperty('--hide-scroll-hint', isAtEnd ? '1' : '0')
+  }
+}
+
+// Watch for apartments changes to update scroll buttons
+watch(apartments, () => {
+  nextTick(() => {
+    setTimeout(() => {
+      updateScrollButtons()
+    }, 100)
+  })
+}, { immediate: true })
 
 const getApartmentMainImage = (apartment) => {
   // Get the main image or first image from the apartment
@@ -1399,8 +1529,15 @@ const subscribeNewsletter = async () => {
 
 // Lifecycle
 onMounted(() => {
-  // Fetch apartments data
+  // Fetch apartments data using mock endpoint
   fetchApartments()
+  
+  // Initialize scroll buttons after apartments load
+  nextTick(() => {
+    setTimeout(() => {
+      updateScrollButtons()
+    }, 100)
+  })
   
   // Scroll handler for navbar
   const handleScroll = () => {
@@ -1469,69 +1606,702 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* FORCE GRID LAYOUT - Dynamic content with uniform heights */
-.force-grid-layout {
-  display: grid !important;
-  grid-template-columns: repeat(3, 1fr) !important;
-  gap: 2rem !important;
-  width: 100% !important;
-  max-width: 1200px !important;
-  margin: 0 auto !important;
-  grid-auto-rows: 1fr !important;
-  align-items: stretch !important;
+/* RESPONSIVE SYSTEM - Standardized Breakpoints */
+/* 
+  - Mobile Portrait: 0 - 480px
+  - Mobile Landscape: 481px - 767px  
+  - Tablet: 768px - 1024px
+  - Desktop: 1025px - 1199px
+  - Large Desktop: 1200px+
+*/
+
+/* RESET AND BASE STYLES */
+* {
+  box-sizing: border-box;
 }
 
-/* Dynamic cards that stretch to match tallest card */
-.force-grid-layout .apartment-card {
-  width: 100% !important;
-  max-width: none !important;
-  margin: 0 !important;
-  position: relative !important;
-  grid-column: auto !important;
-  grid-row: auto !important;
-  height: auto !important;
-  min-height: 500px !important;
-  display: flex !important;
-  flex-direction: column !important;
+html, body {
+  overflow-x: hidden;
+  scroll-behavior: smooth;
 }
 
-/* Responsive for smaller screens */
-@media (max-width: 1199px) {
-  .force-grid-layout {
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+/* APARTMENT CAROUSEL STYLES */
+.apartment-carousel-container {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.apartments-scroll-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+  padding-bottom: 1rem;
+}
+
+.apartments-scroll-container::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+.apartments-grid {
+  display: flex;
+  gap: 2rem;
+  padding: 0 1rem;
+  align-items: stretch;
+}
+
+/* Default: Show 2 cards with proper sizing */
+.apartment-card {
+  flex: 0 0 calc((100% - 2rem) / 2); /* 2 cards with 2rem gap */
+  min-width: 300px;
+  max-width: 480px;
+  min-height: 500px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+/* When scrollable, allow horizontal overflow */
+.apartments-scroll-container.scrollable .apartments-grid {
+  width: max-content;
+}
+
+.apartments-scroll-container.scrollable .apartment-card {
+  flex: 0 0 450px; /* Fixed width for horizontal scroll - larger for 2-card layout */
+}
+
+/* Scroll Navigation Buttons */
+.scroll-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(139, 69, 19, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.scroll-button:hover {
+  background: #8B4513;
+  color: white;
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 6px 20px rgba(139, 69, 19, 0.3);
+}
+
+.scroll-left {
+  left: -24px;
+}
+
+.scroll-right {
+  right: -24px;
+}
+
+.scroll-button i {
+  font-size: 16px;
+}
+
+/* Scroll Indicators */
+.scroll-indicators {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 2rem;
+}
+
+.scroll-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(139, 69, 19, 0.3);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.scroll-indicator.active {
+  background: #8B4513;
+  transform: scale(1.2);
+}
+
+.scroll-indicator:hover {
+  background: #8B4513;
+  transform: scale(1.1);
+}
+
+/* RESPONSIVE STYLES - STANDARDIZED */
+
+/* Large Desktop (1200px+) */
+@media (min-width: 1200px) {
+  .apartment-card {
+    flex: 0 0 calc((100% - 2rem) / 2); /* 2 cards */
+    max-width: 480px;
+    min-height: 520px;
   }
   
-  .force-grid-layout .apartment-card {
-    min-height: 480px !important;
+  .apartments-scroll-container.scrollable .apartment-card {
+    flex: 0 0 450px;
   }
   
-  .apartment-content {
-    padding: 1.75rem;
+  .apartment-carousel-container {
+    max-width: 1200px;
+    padding: 0;
+  }
+  
+  .scroll-button {
+    width: 48px;
+    height: 48px;
   }
 }
 
-@media (max-width: 768px) {
-  .force-grid-layout {
-    grid-template-columns: 1fr !important;
-    gap: 1.5rem !important;
+/* Desktop (1025px - 1199px) */
+@media (min-width: 1025px) and (max-width: 1199px) {
+  .apartment-card {
+    flex: 0 0 calc((100% - 2rem) / 2); /* 2 cards */
+    max-width: 450px;
+    min-height: 500px;
   }
   
-  .force-grid-layout .apartment-card {
-    min-height: 450px !important;
+  .apartments-scroll-container.scrollable .apartment-card {
+    flex: 0 0 420px;
+  }
+  
+  .apartment-carousel-container {
+    max-width: 1000px;
+    padding: 0 1rem;
+  }
+}
+
+/* Tablet (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .apartment-carousel-container {
+    max-width: 100%;
+    padding: 0 1rem;
+  }
+  
+  .apartment-card {
+    flex: 0 0 calc((100% - 2rem) / 2); /* 2 cards */
+    min-width: 300px;
+    max-width: 380px;
+    min-height: 480px;
+  }
+  
+  .apartments-scroll-container.scrollable .apartment-card {
+    flex: 0 0 350px;
+  }
+  
+  .scroll-button {
+    width: 42px;
+    height: 42px;
+  }
+  
+  .scroll-left {
+    left: -21px;
+  }
+  
+  .scroll-right {
+    right: -21px;
+  }
+}
+
+/* Mobile Landscape (481px - 767px) */
+@media (min-width: 481px) and (max-width: 767px) {
+  .apartment-carousel-container {
+    position: relative;
+    padding: 0 0.5rem;
+  }
+  
+  .apartments-scroll-container {
+    position: relative;
+  }
+  
+  .apartment-card {
+    flex: 0 0 calc(90% - 0.75rem); /* Show peek of next card */
+    min-width: 320px;
+    max-width: none;
+    min-height: 460px;
+  }
+  
+  .apartments-scroll-container.scrollable .apartment-card {
+    flex: 0 0 85%; /* Clear peek effect */
+    max-width: 400px;
+  }
+  
+  /* Fade gradient */
+  .apartments-scroll-container.scrollable::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 50px;
+    height: 100%;
+    background: linear-gradient(to left, rgba(255, 255, 255, 0.9), transparent);
+    pointer-events: none;
+    z-index: 5;
+    opacity: calc(1 - var(--hide-scroll-hint, 0));
+    transition: opacity 0.3s ease;
+  }
+  
+  .scroll-button {
+    display: none;
+  }
+  
+  .scroll-indicators::before {
+    content: 'Swipe to see more apartments';
+    display: block;
+    text-align: center;
+    font-size: 0.875rem;
+    color: #8B4513;
+    margin-bottom: 1rem;
+    opacity: 0.8;
+  }
+}
+
+/* Mobile Portrait (0 - 480px) */
+@media (max-width: 480px) {
+  .apartment-carousel-container {
+    padding: 0 0.5rem;
+    position: relative;
+  }
+  
+  .apartments-grid {
+    gap: 1rem;
+    padding: 0 0.5rem;
+  }
+  
+  .apartment-card {
+    flex: 0 0 calc(90% - 0.5rem); /* Show clear peek */
+    min-width: 280px;
+    min-height: 420px;
+  }
+  
+  .apartments-scroll-container.scrollable .apartment-card {
+    flex: 0 0 88%; /* Clear peek effect */
+    max-width: 320px;
+  }
+  
+  /* Enhanced fade gradient */
+  .apartments-scroll-container.scrollable::after {
+    width: 40px;
+    background: linear-gradient(to left, rgba(255, 255, 255, 0.95), transparent);
+  }
+  
+  /* Arrow hint */
+  .apartments-scroll-container.scrollable::before {
+    content: '→';
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    font-size: 1.5rem;
+    color: #8B4513;
+    opacity: calc(0.6 * (1 - var(--hide-scroll-hint, 0)));
+    z-index: 6;
+    animation: pulse 2s infinite;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
   }
   
   .apartment-image {
-    height: 200px;
+    height: 180px;
   }
   
   .apartment-content {
-    padding: 1.5rem;
+    padding: 1.25rem;
+  }
+  
+  .apartment-title {
+    font-size: 1.25rem;
   }
   
   .apartment-features {
-    gap: 0.5rem;
-    grid-template-columns: 1fr;
+    font-size: 0.9rem;
   }
+  
+  .scroll-indicators {
+    margin-top: 1.5rem;
+  }
+  
+  .scroll-indicators::before {
+    font-size: 0.8rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .scroll-indicator {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .apartments-scroll-container {
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  }
+  
+  .apartment-card {
+    scroll-snap-align: start;
+  }
+  
+  .scroll-button {
+    display: none;
+  }
+  
+  /* Enhanced scroll indicators for touch devices */
+  .scroll-indicators {
+    padding: 1rem 0;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    margin-top: 1.5rem;
+  }
+  
+  .scroll-indicators::before {
+    font-weight: 500;
+    color: #6B4423;
+  }
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translateY(-50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.1);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Add fade-in animation to apartment cards */
+.apartment-card {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.apartment-card:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.apartment-card:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .apartments-scroll-container {
+    scroll-behavior: auto;
+  }
+  
+  .scroll-button {
+    transition: none;
+  }
+  
+  .apartment-card {
+    transition: none;
+  }
+}
+
+/* RESPONSIVE SYSTEM - NAVBAR AND LAYOUT FIXES */
+
+/* Fix navbar responsiveness */
+@media (max-width: 767px) {
+  .navbar {
+    padding: 12px 0;
+  }
+  
+  .nav-container {
+    padding: 0 1rem;
+  }
+  
+  .logo {
+    font-size: 20px;
+  }
+  
+  .logo-icon {
+    font-size: 24px;
+  }
+  
+  .mobile-menu-toggle {
+    padding: 6px;
+  }
+  
+  .hamburger-line {
+    width: 22px;
+    height: 2px;
+  }
+  
+  .mobile-menu {
+    padding: 1rem;
+  }
+  
+  .mobile-nav-link {
+    padding: 12px 0;
+    font-size: 16px;
+  }
+}
+
+/* Hero section responsive fixes */
+@media (max-width: 480px) {
+  .hero-title-main {
+    font-size: 32px !important;
+    line-height: 1.2;
+  }
+  
+  .hero-title-sub {
+    font-size: 18px !important;
+  }
+  
+  .hero-description {
+    font-size: 16px;
+    padding: 0 1rem;
+  }
+  
+  .hero-actions {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 0 1rem;
+  }
+  
+  .hero-actions .btn {
+    width: 100%;
+    max-width: 280px;
+    justify-content: center;
+  }
+  
+  .hero-stats {
+    gap: 20px;
+    padding: 0 1rem;
+  }
+  
+  .stat-number {
+    font-size: 24px;
+  }
+  
+  .stat-label {
+    font-size: 12px;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
+  .hero-title-main {
+    font-size: 40px !important;
+  }
+  
+  .hero-title-sub {
+    font-size: 20px !important;
+  }
+  
+  .hero-actions {
+    gap: 14px;
+  }
+  
+  .hero-stats {
+    gap: 30px;
+  }
+}
+
+/* Section headers responsive */
+@media (max-width: 480px) {
+  .section-header {
+    margin-bottom: 40px;
+    padding: 0 1rem;
+  }
+  
+  .section-title {
+    font-size: 28px;
+  }
+  
+  .section-description {
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
+  .section-title {
+    font-size: 32px;
+  }
+}
+
+/* Apartment content responsive fixes */
+@media (max-width: 480px) {
+  .apartment-content {
+    padding: 1.25rem !important;
+  }
+  
+  .apartment-title {
+    font-size: 1.25rem !important;
+  }
+  
+  .apartment-description {
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+  
+  .apartment-features {
+    font-size: 0.875rem !important;
+  }
+  
+  .apartment-features li {
+    margin-bottom: 6px;
+  }
+  
+  .apartment-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .apartment-price {
+    font-size: 18px;
+  }
+  
+  .apartment-footer .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Fix overflow issues */
+@media (max-width: 767px) {
+  .container {
+    padding: 0 1rem !important;
+    max-width: 100% !important;
+    overflow-x: hidden;
+  }
+  
+  .section-padding {
+    padding: 50px 0 !important;
+  }
+  
+  /* Prevent horizontal scroll */
+  body, html {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+  
+  * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* Icon fixes - ensure all FontAwesome icons are visible */
+i[class*="fa-"], 
+.fas, 
+.far, 
+.fal, 
+.fab {
+  font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 6 Brands" !important;
+  font-style: normal;
+  font-variant: normal;
+  text-rendering: auto;
+  line-height: 1;
+  display: inline-block;
+}
+
+.fas {
+  font-weight: 900 !important;
+}
+
+.far {
+  font-weight: 400 !important;
+}
+
+.fab {
+  font-weight: 400 !important;
+}
+
+/* Specific icon fixes */
+.fa-times::before {
+  content: "\f00d" !important;
+}
+
+.fa-chevron-left::before {
+  content: "\f053" !important;
+}
+
+.fa-chevron-right::before {
+  content: "\f054" !important;
+}
+
+.fa-bed::before {
+  content: "\f236" !important;
+}
+
+.fa-bath::before {
+  content: "\f2cd" !important;
+}
+
+.fa-users::before {
+  content: "\f0c0" !important;
+}
+
+.fa-home::before {
+  content: "\f015" !important;
+}
+
+.fa-building::before {
+  content: "\f1ad" !important;
+}
+
+.fa-star::before {
+  content: "\f005" !important;
+}
+
+.fa-images::before {
+  content: "\f302" !important;
+}
+
+.fa-calendar-check::before {
+  content: "\f274" !important;
+}
+
+.fa-mountain::before {
+  content: "\f6fc" !important;
+}
+
+.fa-play::before {
+  content: "\f04b" !important;
+}
+
+.fa-chevron-down::before {
+  content: "\f078" !important;
+}
+
+.fa-exclamation-triangle::before {
+  content: "\f071" !important;
+}
+
+.fa-redo::before {
+  content: "\f01e" !important;
 }
 
 /* Enhanced Apartments Section Styling for Public Page */
@@ -2610,7 +3380,149 @@ onMounted(() => {
 }
 
 /* Responsive Design for Modal */
+/* MODAL RESPONSIVE FIXES */
 @media (max-width: 1024px) {
+  .apartment-modal-content {
+    width: 95vw !important;
+    max-width: 900px !important;
+    margin: 2rem auto !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+  
+  .apartment-modal-close {
+    top: 1rem !important;
+    right: 1rem !important;
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 18px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .apartment-modal-content {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none !important;
+    max-height: none !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  .apartment-modal-close {
+    position: fixed !important;
+    top: 1rem !important;
+    right: 1rem !important;
+    z-index: 2001 !important;
+    background: rgba(0, 0, 0, 0.8) !important;
+    color: white !important;
+    border-radius: 50% !important;
+  }
+  
+  .apartment-modal-header,
+  .apartment-modal-body {
+    padding: 1rem !important;
+  }
+  
+  .apartment-modal-header h2 {
+    font-size: 1.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  .apartment-modal-gallery {
+    height: 250px !important;
+  }
+  
+  .apartment-modal-features {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem !important;
+  }
+  
+  .apartment-modal-features li {
+    font-size: 0.875rem !important;
+  }
+  
+  .modal-nav-btn {
+    padding: 0.5rem !important;
+    font-size: 14px !important;
+  }
+}
+
+/* LIGHTBOX RESPONSIVE FIXES */
+@media (max-width: 768px) {
+  .lightbox-content {
+    max-width: 95vw !important;
+    max-height: 95vh !important;
+  }
+  
+  .lightbox-close {
+    top: -40px !important;
+    right: 0 !important;
+    font-size: 20px !important;
+    padding: 8px !important;
+  }
+  
+  .lightbox-nav {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 16px !important;
+  }
+  
+  .lightbox-prev {
+    left: -50px !important;
+  }
+  
+  .lightbox-next {
+    right: -50px !important;
+  }
+  
+  .lightbox-counter {
+    bottom: -30px !important;
+    font-size: 12px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .lightbox-content {
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+  }
+  
+  .lightbox-close {
+    top: 10px !important;
+    right: 10px !important;
+    background: rgba(0, 0, 0, 0.8) !important;
+    border-radius: 50% !important;
+    width: 40px !important;
+    height: 40px !important;
+  }
+  
+  .lightbox-nav {
+    width: 35px !important;
+    height: 35px !important;
+    font-size: 14px !important;
+  }
+  
+  .lightbox-prev {
+    left: 10px !important;
+  }
+  
+  .lightbox-next {
+    right: 10px !important;
+  }
+  
+  .lightbox-counter {
+    bottom: 20px !important;
+    position: relative !important;
+    left: auto !important;
+    transform: none !important;
+    text-align: center !important;
+    margin-top: 1rem !important;
+  }
+  
   .apartment-modal-content {
     max-width: 95vw;
     max-height: 90vh;
@@ -2649,6 +3561,7 @@ onMounted(() => {
   }
 }
 
+/* MODAL RESPONSIVE FIXES - Additional */
 @media (max-width: 768px) {
   .apartment-modal-overlay {
     padding: 5px;
@@ -3042,5 +3955,107 @@ onMounted(() => {
 
 .apartment-modal-details::-webkit-scrollbar-thumb:hover {
   background: var(--secondary-color);
+}
+
+/* GLOBAL RESPONSIVE OVERRIDES */
+@media (max-width: 480px) {
+  /* Prevent any horizontal overflow */
+  .apartments-section,
+  .amenities-section,
+  .gallery-section,
+  .booking-section {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+  }
+  
+  /* Fix any margin/padding causing overflow */
+  .container {
+    margin: 0 auto !important;
+    padding: 0 0.75rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  /* Ensure buttons don't break layout */
+  .btn {
+    font-size: 14px !important;
+    padding: 10px 16px !important;
+  }
+  
+  .btn-large {
+    font-size: 16px !important;
+    padding: 12px 20px !important;
+  }
+  
+  /* Gallery responsive fixes */
+  .gallery-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  
+  .gallery-item {
+    height: 200px !important;
+  }
+  
+  /* Amenities responsive fixes */
+  .amenities-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+  
+  .amenity-card {
+    padding: 1.5rem 1rem !important;
+  }
+  
+  .amenity-icon {
+    width: 60px !important;
+    height: 60px !important;
+    font-size: 24px !important;
+    margin-bottom: 1rem !important;
+  }
+  
+  .amenity-title {
+    font-size: 18px !important;
+  }
+  
+  .amenity-description {
+    font-size: 14px !important;
+  }
+  
+  /* Make sure all text is readable */
+  h1, h2, h3, h4, h5, h6 {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    hyphens: auto !important;
+  }
+  
+  p, span, div {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+  
+  /* Loading states responsive */
+  .loading-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .apartment-card-skeleton,
+  .error-card,
+  .empty-card {
+    margin: 0 0.5rem !important;
+  }
+}
+
+/* Fix icon display issues */
+.fas, .far, .fab {
+  font-family: "Font Awesome 6 Free" !important;
+  font-weight: 900 !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  text-rendering: auto !important;
+  line-height: 1 !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
 }
 </style>
