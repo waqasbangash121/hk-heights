@@ -1,22 +1,21 @@
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
-const prisma = new PrismaClient()
-
 export default defineEventHandler(async (event) => {
+  let prisma
   if (event.method !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' }
   }
-  
+
   const body = await readBody(event)
   const { username, password } = body || {}
-  
+
   console.log('Login attempt:', { username, hasPassword: !!password })
-  
+
   if (!username || !password) {
     return { error: 'Missing credentials' }
   }
-  
+
   try {
     // Check if DATABASE_URL is configured
     if (!process.env.DATABASE_URL) {
@@ -28,24 +27,30 @@ export default defineEventHandler(async (event) => {
     }
 
     console.log('Attempting to find user in database...')
-    
+    try {
+      prisma = new PrismaClient()
+    } catch (clientErr) {
+      console.error('PrismaClient instantiation failed:', clientErr)
+      return { error: 'Database client init failed', details: clientErr?.message }
+    }
+
     const user = await prisma.adminUser.findUnique({
       where: { username }
     })
-    
+
     console.log('User found:', !!user)
-    
+
     if (!user) {
       return { error: 'Invalid credentials' }
     }
-    
+
     const valid = await bcrypt.compare(password, user.password)
     console.log('Password valid:', valid)
-    
+
     if (!valid) {
       return { error: 'Invalid credentials' }
     }
-    
+
     // For demo: use a simple token (in production, use JWT)
     const token = Buffer.from(`${user.id}:${user.username}`).toString('base64')
     return { success: true, token }
@@ -57,7 +62,7 @@ export default defineEventHandler(async (event) => {
     }
   } finally {
     try {
-      await prisma.$disconnect()
+      if (prisma) await prisma.$disconnect()
     } catch (e) {
       console.warn('Error disconnecting Prisma:', e.message)
     }

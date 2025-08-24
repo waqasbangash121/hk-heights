@@ -1,8 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient()
-
 export default defineEventHandler(async (event) => {
+  let prisma
   // Simple auth check
   const authHeader = getHeader(event, 'authorization')
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -12,7 +11,8 @@ export default defineEventHandler(async (event) => {
   const imageId = getRouterParam(event, 'id')
 
   try {
-    await prisma.apartmentImage.delete({
+  try { prisma = new PrismaClient() } catch (clientErr) { console.error('PrismaClient instantiation failed:', clientErr); return { error: 'Database client init failed', details: clientErr?.message } }
+  await prisma.apartmentImage.delete({
       where: { id: parseInt(imageId) }
     })
 
@@ -20,6 +20,6 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     return { error: error.message }
   } finally {
-    await prisma.$disconnect()
+  try { if (prisma) await prisma.$disconnect() } catch (e) { console.warn('Error disconnecting Prisma:', e.message) }
   }
 })

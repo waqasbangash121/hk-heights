@@ -10,6 +10,7 @@ export default defineNuxtConfig({
       wasm: true
     },
     // Fix Prisma build issues
+    // Fix Prisma build issues
     rollupConfig: {
       external: ['@prisma/client']
     },

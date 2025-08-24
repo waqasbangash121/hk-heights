@@ -1,8 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient()
-
 export default defineEventHandler(async (event) => {
+  let prisma
   // Simple auth check - in production, use proper JWT validation
   const authHeader = getHeader(event, 'authorization')
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -17,9 +16,10 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    let result
+  let result
+  try { prisma = new PrismaClient() } catch (clientErr) { console.error('PrismaClient instantiation failed:', clientErr); return { error: 'Database client init failed', details: clientErr?.message } }
 
-    if (type === 'property') {
+  if (type === 'property') {
       // If setting as main image, unset other main images first
       if (isMain) {
         await prisma.propertyImage.updateMany({
@@ -62,5 +62,8 @@ export default defineEventHandler(async (event) => {
     return { success: true, image: result }
   } catch (error) {
     return { error: error.message }
+  }
+  finally {
+    try { if (prisma) await prisma.$disconnect() } catch (e) { console.warn('Error disconnecting Prisma:', e.message) }
   }
 })

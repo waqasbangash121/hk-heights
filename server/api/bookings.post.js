@@ -1,8 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient()
-
 export default defineEventHandler(async (event) => {
+  let prisma
   const body = await readBody(event)
   const { 
     firstName, 
@@ -22,6 +21,7 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
+  try { prisma = new PrismaClient() } catch (clientErr) { console.error('PrismaClient instantiation failed:', clientErr); return { error: 'Database client init failed', details: clientErr?.message } }
     // Check if apartment is available for the selected dates
     const existingBooking = await prisma.booking.findFirst({
       where: {
@@ -89,5 +89,8 @@ export default defineEventHandler(async (event) => {
     return { success: true, booking }
   } catch (error) {
     return { error: error.message }
+  }
+  finally {
+    try { if (prisma) await prisma.$disconnect() } catch (e) { console.warn('Error disconnecting Prisma:', e.message) }
   }
 })

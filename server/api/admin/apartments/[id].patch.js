@@ -1,8 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient()
-
 export default defineEventHandler(async (event) => {
+  let prisma
   // Simple auth check
   const authHeader = getHeader(event, 'authorization')
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -23,7 +22,8 @@ export default defineEventHandler(async (event) => {
   } = body
 
   try {
-    // If amenityIds are provided, update them
+  try { prisma = new PrismaClient() } catch (clientErr) { console.error('PrismaClient instantiation failed:', clientErr); return { error: 'Database client init failed', details: clientErr?.message } }
+  // If amenityIds are provided, update them
     if (amenityIds !== undefined) {
       // Delete existing amenity associations
       await prisma.apartmentAmenity.deleteMany({
@@ -69,6 +69,6 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     return { error: error.message }
   } finally {
-    await prisma.$disconnect()
+  try { if (prisma) await prisma.$disconnect() } catch (e) { console.warn('Error disconnecting Prisma:', e.message) }
   }
 })

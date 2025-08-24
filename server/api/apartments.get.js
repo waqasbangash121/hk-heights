@@ -1,7 +1,5 @@
 import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient()
-
 // Mock data as fallback when database is not available
 const mockApartments = [
   {
@@ -134,6 +132,7 @@ const mockApartments = [
 ]
 
 export default defineEventHandler(async (event) => {
+  let prisma
   try {
     // Check if DATABASE_URL is configured
     if (!process.env.DATABASE_URL) {
@@ -147,7 +146,22 @@ export default defineEventHandler(async (event) => {
     }
 
     console.log('Attempting to connect to database...')
-    
+    // Lazily create PrismaClient so import-time issues don't crash the function
+    try {
+      prisma = new PrismaClient()
+    } catch (clientErr) {
+      console.error('PrismaClient instantiation failed:', clientErr)
+      console.log('Falling back to mock data due to PrismaClient error')
+      return {
+        success: false,
+        apartments: mockApartments,
+        mock: true,
+        source: 'prisma_init_error',
+        error_message: clientErr?.message,
+        error_stack: clientErr?.stack
+      }
+    }
+
     const apartments = await prisma.apartment.findMany({
       where: { isActive: true },
       include: {

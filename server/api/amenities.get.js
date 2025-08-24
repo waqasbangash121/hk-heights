@@ -1,9 +1,15 @@
 import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient()
-
 export default defineEventHandler(async (event) => {
+  let prisma
   try {
+    try {
+      prisma = new PrismaClient()
+    } catch (clientErr) {
+      console.error('PrismaClient instantiation failed:', clientErr)
+      return { error: 'Database client init failed', details: clientErr?.message }
+    }
+
     const amenities = await prisma.amenity.findMany({
       orderBy: { name: 'asc' }
     })
@@ -13,6 +19,10 @@ export default defineEventHandler(async (event) => {
     console.error('Error fetching amenities:', error)
     return { error: error.message }
   } finally {
-    await prisma.$disconnect()
+    try {
+      if (prisma) await prisma.$disconnect()
+    } catch (e) {
+      console.warn('Error disconnecting Prisma:', e.message)
+    }
   }
 })
