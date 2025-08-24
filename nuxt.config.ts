@@ -8,6 +8,10 @@ export default defineNuxtConfig({
     preset: 'netlify',
     experimental: {
       wasm: true
+    },
+    // Fix Prisma build issues
+    rollupConfig: {
+      external: ['@prisma/client']
     }
   },
 
@@ -107,6 +111,16 @@ export default defineNuxtConfig({
   // Production build optimizations
   build: {
     transpile: ['@prisma/client']
+  },
+
+  // Vite configuration for Prisma
+  vite: {
+    define: {
+      global: 'globalThis'
+    },
+    optimizeDeps: {
+      exclude: ['@prisma/client']
+    }
   },
 
   // SEO module (you can install @nuxtjs/seo later)
