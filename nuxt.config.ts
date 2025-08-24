@@ -9,8 +9,14 @@ export default defineNuxtConfig({
     experimental: {
       wasm: true
     },
-    // Fix Prisma build issues
-    // Fix Prisma build issues
+  // Note: do not force @prisma/client to be external here — externalizing
+  // it caused runtime "Cannot find package '@prisma/client'" errors on
+  // Netlify because the function package did not include it. Let Nitro
+    // include it so the dependency is available at runtime.
+    // However, bundling @prisma/client causes Rollup resolution issues (it
+    // imports a ".prisma" pseudo-package). We externalize it here and then
+    // ensure the function package.json lists @prisma/client so Netlify will
+    // install it at deploy time.
     rollupConfig: {
       external: ['@prisma/client']
     },
