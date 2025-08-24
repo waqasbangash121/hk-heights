@@ -4,12 +4,8 @@
   
 [build.environment]
   NODE_VERSION = "20"
-
-# Disable conflicting plugins
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
-  [plugins.inputs]
-    disable = true
+  # Disable framework detection to prevent Next.js plugin conflicts
+  NPM_FLAGS = "--no-optional"
 
 # Headers for security and performance
 [[headers]]
@@ -35,7 +31,6 @@
 [context.production.environment]
   NITRO_PRESET = "netlify"
   NODE_ENV = "production"
-  # DATABASE_URL will need to be set in Netlify UI
 
 [context.deploy-preview.environment]
   NITRO_PRESET = "netlify"
