@@ -1,3 +1,7 @@
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
 // Mock data as fallback when database is not available
 const mockApartments = [
   {
@@ -131,23 +135,69 @@ const mockApartments = [
 
 export default defineEventHandler(async (event) => {
   try {
-    // For now, always return mock data to avoid any Prisma issues
-    console.log('Apartments API called, returning mock data')
+    // Check if DATABASE_URL is configured
+    if (!process.env.DATABASE_URL) {
+      console.log('DATABASE_URL not configured, using mock data')
+      return { 
+        success: true, 
+        apartments: mockApartments,
+        mock: true,
+        source: 'fallback'
+      }
+    }
+
+    console.log('Attempting to connect to database...')
     
+    const apartments = await prisma.apartment.findMany({
+      where: { isActive: true },
+      include: {
+        property: true,
+        images: {
+          orderBy: { sortOrder: 'asc' }
+        },
+        amenities: {
+          include: {
+            amenity: true
+          }
+        }
+      },
+      orderBy: { id: 'asc' }
+    })
+
+    console.log(`Found ${apartments.length} apartments from database`)
+    
+    // If no apartments in database, return mock data
+    if (apartments.length === 0) {
+      console.log('No apartments found in database, returning mock data')
+      return { 
+        success: true, 
+        apartments: mockApartments,
+        mock: true,
+        source: 'empty_db'
+      }
+    }
+
     return { 
       success: true, 
-      apartments: mockApartments,
-      mock: true,
-      timestamp: new Date().toISOString()
+      apartments,
+      source: 'database'
     }
   } catch (error) {
-    console.error('Apartments API error:', error)
+    console.error('Apartments API error:', error.message)
+    console.log('Falling back to mock data due to database error')
     
     return { 
-      success: false,
-      error: error.message,
-      apartments: [],
-      timestamp: new Date().toISOString()
+      success: true,
+      apartments: mockApartments,
+      mock: true,
+      source: 'error_fallback',
+      error_details: error.message
+    }
+  } finally {
+    try {
+      await prisma.$disconnect()
+    } catch (e) {
+      console.warn('Error disconnecting Prisma:', e.message)
     }
   }
 })

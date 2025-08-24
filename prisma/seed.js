@@ -1,8 +1,8 @@
-// Use CommonJS import style for compatibility
-const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
+// Use ES modules import style
+import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
 
 async function main() {
   const username = 'admin';
