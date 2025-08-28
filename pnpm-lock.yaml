@@ -50,6 +50,9 @@ importers:
       postgres-array:
         specifier: ^3.0.4
         version: 3.0.4
+      postgres-bytea:
+        specifier: ^3.0.0
+        version: 3.0.0
       prisma:
         specifier: 6.14.0
         version: 6.14.0(typescript@5.9.2)
