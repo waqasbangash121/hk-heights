@@ -226,9 +226,9 @@
               </div>
 
               <!-- Success State with Apartments -->
-              <div v-else-if="apartments && apartments.length > 0" class="apartments-grid">
+              <div v-else-if="activeApartments && activeApartments.length > 0" class="apartments-grid">
                 <div 
-                  v-for="(apartment, index) in apartments" 
+                  v-for="(apartment, index) in activeApartments" 
                   :key="`apartment-${apartment.id}`"
                   class="apartment-card"
                   @click="openApartmentModal(apartment)"
@@ -1071,6 +1071,9 @@ const apartments = ref([])
 const apartmentsLoading = ref(true)
 const apartmentsError = ref(null)
 
+// Only show active apartments
+const activeApartments = computed(() => apartments.value.filter(a => a.isActive))
+
 // Horizontal scroll functionality
 const apartmentsContainer = ref(null)
 const canScrollLeft = ref(false)
@@ -1147,7 +1150,7 @@ const apartmentGridStyles = computed(() => {
     maxWidth: '1200px',
     marginLeft: 'auto',
     marginRight: 'auto',
-    marginTop: '3rem'
+    margcinTop: '3rem'
   }
 })
 
@@ -1410,9 +1413,9 @@ const closeApartmentModal = () => {
 }
 
 const nextApartment = () => {
-  if (currentApartmentIndex.value < apartments.value.length - 1) {
+  if (currentApartmentIndex.value < activeApartments.value.length - 1) {
     currentApartmentIndex.value++
-    selectedModalApartment.value = apartments.value[currentApartmentIndex.value]
+    selectedModalApartment.value = activeApartments.value[currentApartmentIndex.value]
     currentModalImageIndex.value = 0
   }
 }
@@ -1420,7 +1423,7 @@ const nextApartment = () => {
 const prevApartment = () => {
   if (currentApartmentIndex.value > 0) {
     currentApartmentIndex.value--
-    selectedModalApartment.value = apartments.value[currentApartmentIndex.value]
+    selectedModalApartment.value = activeApartments.value[currentApartmentIndex.value]
     currentModalImageIndex.value = 0
   }
 }

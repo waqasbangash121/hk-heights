@@ -118,7 +118,7 @@
                       <small>{{ booking.guest.email }}</small>
                     </div>
                   </td>
-                  <td>{{ booking.apartment?.name || 'N/A' }}</td>
+                  <td>{{ booking.apartmentName || booking.apartment?.name || 'N/A' }}</td>
                   <td>{{ formatDate(booking.checkIn) }}</td>
                   <td>{{ formatDate(booking.checkOut) }}</td>
                   <td>{{ booking.guests }}</td>
@@ -702,11 +702,11 @@ async function saveApartment() {
     const url = editingApartment.value 
       ? `/api/admin/apartments/${editingApartment.value.id}`
       : '/api/admin/apartments'
-    
+
     const method = editingApartment.value ? 'PATCH' : 'POST'
-    
-    console.log('Request details:', { url, method, data: apartmentForm.value })
-    
+
+    console.log('Request details:', { url, method, data: apartmentForm.value, editingApartment: editingApartment.value })
+
     const response = await fetch(url, {
       method,
       headers: {
@@ -718,16 +718,28 @@ async function saveApartment() {
 
     const data = await response.json()
     console.log('Response:', data)
-    
+
     if (data.success) {
       if (editingApartment.value) {
-        // Update existing apartment in the list
-        const index = apartments.value.findIndex(a => a.id === editingApartment.value.id)
-        if (index !== -1) {
-          apartments.value[index] = data.apartment
+        // Defensive logging for debugging
+        if (!data.apartment || typeof data.apartment.id === 'undefined') {
+          console.error('Returned apartment object is missing id:', data.apartment)
+          alert('Error: The updated apartment object is missing an id. Please check the backend response.')
+          return
         }
+        const index = apartments.value.findIndex(a => a.id === editingApartment.value.id)
+        if (index === -1) {
+          console.error('Could not find apartment in local list with id:', editingApartment.value.id)
+          alert('Error: Could not find the apartment in the local list. Please refresh the page.')
+          return
+        }
+        apartments.value[index] = data.apartment
       } else {
-        // Add new apartment to the list
+        if (!data.apartment || typeof data.apartment.id === 'undefined') {
+          console.error('Returned apartment object is missing id (create):', data.apartment)
+          alert('Error: The created apartment object is missing an id. Please check the backend response.')
+          return
+        }
         apartments.value.push(data.apartment)
         stats.value.totalApartments++
       }

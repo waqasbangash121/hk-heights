@@ -1,7 +1,7 @@
-const { Client } = require('pg');
-const bcrypt = require('bcryptjs');
+import { PrismaClient } from '../../generated/prisma';
+import bcrypt from 'bcryptjs';
 
-exports.handler = async (event) => {
+export async function handler(event) {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
@@ -9,17 +9,12 @@ exports.handler = async (event) => {
   if (!username || !password) {
     return { statusCode: 400, body: JSON.stringify({ error: 'Missing credentials' }) };
   }
-  const client = new Client({
-    connectionString: 'postgresql://neondb_owner:npg_Q8km9DOTfFwb@ep-morning-star-adqatd6b-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require',
-  });
+  const prisma = new PrismaClient();
   try {
-    await client.connect();
-    const res = await client.query('SELECT * FROM admin_users WHERE username = $1', [username]);
-    await client.end();
-    if (res.rows.length === 0) {
+    const user = await prisma.adminUser.findUnique({ where: { username } });
+    if (!user) {
       return { statusCode: 401, body: JSON.stringify({ error: 'Invalid credentials' }) };
     }
-    const user = res.rows[0];
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
       return { statusCode: 401, body: JSON.stringify({ error: 'Invalid credentials' }) };
@@ -32,5 +27,7 @@ exports.handler = async (event) => {
     };
   } catch (err) {
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+  } finally {
+    await prisma.$disconnect();
   }
-};
+}

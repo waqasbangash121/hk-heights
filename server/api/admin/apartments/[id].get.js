@@ -16,15 +16,13 @@ export default defineEventHandler(async (event) => {
     if (!apartment) {
       return { error: 'Apartment not found' };
     }
-    // Fetch property, images, amenities
-    const [property] = await sql`SELECT * FROM "Property" WHERE id = ${apartment.propertyId}`;
+    // Fetch images and amenities
     const images = await sql`SELECT * FROM "ApartmentImage" WHERE "apartmentId" = ${apartment.id} ORDER BY "sortOrder" ASC`;
     const amenities = await sql`
       SELECT aa.*, a.* FROM "ApartmentAmenity" aa
       JOIN "Amenity" a ON aa."amenityId" = a.id
       WHERE aa."apartmentId" = ${apartment.id}
     `;
-    apartment.property = property;
     apartment.images = images;
     apartment.amenities = amenities;
 

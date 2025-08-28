@@ -16,18 +16,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     let result;
-    if (type === 'property') {
-      // If setting as main image, unset other main images first
-      if (isMain) {
-        await sql`UPDATE "PropertyImage" SET "isMain" = false WHERE "propertyId" = ${parseInt(entityId)}`;
-      }
-      const images = await sql`
-        INSERT INTO "PropertyImage" ("propertyId", "imageUrl", "altText", "isMain", "sortOrder")
-        VALUES (${parseInt(entityId)}, ${imageUrl}, ${altText}, ${!!isMain}, 0)
-        RETURNING *
-      `;
-      result = images[0];
-    } else if (type === 'apartment') {
+  if (type === 'apartment') {
       // If setting as main image, unset other main images first
       if (isMain) {
         await sql`UPDATE "ApartmentImage" SET "isMain" = false WHERE "apartmentId" = ${parseInt(entityId)}`;

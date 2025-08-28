@@ -8,18 +8,33 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    // Fetch bookings with guest, apartment, and property details
+    // Fetch bookings with guest and apartment details only
     const bookings = await sql`
-      SELECT b.*, g.*, a.*, p.*
+      SELECT b.*, g.*, a.*
       FROM "Booking" b
       LEFT JOIN "Guest" g ON b."guestId" = g.id
       LEFT JOIN "Apartment" a ON b."apartmentId" = a.id
-      LEFT JOIN "Property" p ON a."propertyId" = p.id
       ORDER BY b."createdAt" DESC
     `;
-    // Group/shape results for response
-    // (If needed, post-process to match previous Prisma structure)
-    return { success: true, bookings };
+    // Map guest fields into a guest object for each booking
+    const shapedBookings = bookings.map(row => {
+      const {
+        id, checkIn, checkOut, guests, totalAmount, notes, status, createdAt, apartmentid, guestid,
+        firstName, lastName, email, phone, name: apartmentName,
+        ...rest
+      } = row;
+      return {
+        ...row,
+        guest: firstName || lastName || email || phone ? {
+          firstName,
+          lastName,
+          email,
+          phone
+        } : null,
+        apartmentName: apartmentName || null
+      };
+    });
+    return { success: true, bookings: shapedBookings };
   } catch (error) {
     return { error: error.message };
   }

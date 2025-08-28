@@ -5,6 +5,7 @@
 .nitro
 .cache
 dist
+.env
 
 # Node dependencies
 node_modules
@@ -27,3 +28,5 @@ logs
 
 # Local Netlify folder
 .netlify
+
+/generated/prisma

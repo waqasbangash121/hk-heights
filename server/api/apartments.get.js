@@ -21,27 +21,24 @@ export default defineEventHandler(async (event) => {
       return { success: true, apartments: mockApartments, mock: true, source: 'fallback' }
     }
 
-    // Query apartments with property, images, amenities
+
+    // Query apartments with images and amenities only
     const apartments = await sql`
       SELECT a.*, 
-        row_to_json(p.*) as property,
         COALESCE(json_agg(DISTINCT i.*) FILTER (WHERE i.id IS NOT NULL), '[]') as images,
         COALESCE(json_agg(DISTINCT jsonb_build_object('amenity', row_to_json(am.*))) FILTER (WHERE am.id IS NOT NULL), '[]') as amenities
       FROM "Apartment" a
-      LEFT JOIN "Property" p ON a."propertyId" = p.id
       LEFT JOIN "ApartmentImage" i ON i."apartmentId" = a.id
       LEFT JOIN "ApartmentAmenity" aa ON aa."apartmentId" = a.id
       LEFT JOIN "Amenity" am ON am.id = aa."amenityId"
-      WHERE a."isActive" = true
-      GROUP BY a.id, p.id
+      GROUP BY a.id
       ORDER BY a.id ASC
     `;
 
     const result = apartments.map(row => ({
       ...row,
       images: Array.isArray(row.images) ? row.images : [],
-      amenities: Array.isArray(row.amenities) ? row.amenities : [],
-      property: row.property || null
+      amenities: Array.isArray(row.amenities) ? row.amenities : []
     }))
 
     if (result.length === 0) {

@@ -1,7 +1,15 @@
+
 [build]
-  # Install dependencies, build, then install production-only deps for serverless functions
-  command = "pnpm install --frozen-lockfile --shamefully-hoist && pnpm run build && pnpm --prefix .netlify/functions-internal/server install --prod"
-  publish = "dist"
+  command = "pnpm build"
+  publish = ".output/public"
+# Redirect API calls to Netlify Functions
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+# Add DATABASE_URL to environment (set in Netlify UI for security)
+# [context.production.environment]
+#   DATABASE_URL = "<YOUR_DATABASE_URL>"
 
 [build.environment]
   FORCE_CACHE_BUST = "2"

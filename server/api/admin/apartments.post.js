@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
     maxGuests, 
     pricePerNight,
     amenityIds = [],
-    propertyId = 1 // Default to HK Heights property
+  // propertyId removed, only one property exists
   } = body
 
   if (!name || !bedrooms || !bathrooms || !maxGuests || !pricePerNight) {
@@ -27,10 +27,10 @@ export default defineEventHandler(async (event) => {
     // Create apartment
     const apartments = await sql`
       INSERT INTO "Apartment" (
-        "name", "description", "bedrooms", "bathrooms", "maxGuests", "pricePerNight", "propertyId"
+        "name", "description", "bedrooms", "bathrooms", "maxGuests", "pricePerNight"
       ) VALUES (
         ${name}, ${description}, ${parseInt(bedrooms)}, ${parseInt(bathrooms)},
-        ${parseInt(maxGuests)}, ${parseFloat(pricePerNight)}, ${parseInt(propertyId)}
+        ${parseInt(maxGuests)}, ${parseFloat(pricePerNight)}
       ) RETURNING *
     `;
     const apartment = apartments[0];
@@ -44,15 +44,13 @@ export default defineEventHandler(async (event) => {
       );
     }
 
-    // Fetch property, images, and amenities for response
-    const [property] = await sql`SELECT * FROM "Property" WHERE id = ${apartment.propertyId}`;
+    // Fetch images and amenities for response
     const images = await sql`SELECT * FROM "ApartmentImage" WHERE "apartmentId" = ${apartment.id}`;
     const amenities = await sql`
       SELECT aa.*, a.* FROM "ApartmentAmenity" aa
       JOIN "Amenity" a ON aa."amenityId" = a.id
       WHERE aa."apartmentId" = ${apartment.id}
     `;
-    apartment.property = property;
     apartment.images = images;
     apartment.amenities = amenities;
 
