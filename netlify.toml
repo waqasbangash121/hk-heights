@@ -1,6 +1,6 @@
 
 [build]
-  command = "pnpm build"
+  command = "pnpm prisma generate && pnpm build"
   publish = ".output/public"
 # Redirect API calls to Netlify Functions
 [[redirects]]
